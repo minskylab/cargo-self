@@ -9,5 +9,5 @@ license = "MIT AND Apache-2.0"
 
 [dependencies]
 async-openai = "0.14.3"
-cargo = "0.73.1"
-tokio = { version = "1.32.0", features = ["full"] }
+cargo = "0.74.0"
+tokio = { version = "1.33.0", features = ["full"] }

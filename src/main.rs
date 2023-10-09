@@ -71,14 +71,23 @@ async fn main() {
     ws.members()
         // .filter(|member| member.library().is_some())
         .for_each(|member| {
-            println!("member: {}", member.name());
+            println!("member: {:?}", member.name());
+            member.targets().iter().for_each(|target| {
+                println!("target: {:?}\n", target);
+            });
+
+            member.dependencies().iter().for_each(|dep| {
+                println!("dep: {:?}\n", dep);
+            });
         });
+
+    // ws
 
     // rustc::Rustc::new(path, wrapper, workspace_wrapper, rustup_rustc, cache_location, config)
 
-    let res = compile(&ws, &options).unwrap();
+    // let res = compile(&ws, &options).unwrap();
 
-    res.binaries.iter().for_each(|bin| {
-        println!("bin: {}", bin.path.display());
-    });
+    // res.binaries.iter().for_each(|bin| {
+    //     println!("bin: {}", bin.path.display());
+    // });
 }
