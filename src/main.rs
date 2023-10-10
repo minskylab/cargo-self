@@ -1,6 +1,14 @@
-use std::{fs::canonicalize, path::PathBuf};
+use std::{
+    env,
+    fs::{self, canonicalize},
+    io::BufWriter,
+    path::PathBuf,
+};
+// use walkdir::WalkDir;
 
-use cargo::ops::compile;
+use ignore::{Walk, WalkBuilder};
+
+use cargo::{core::Shell, util::homedir};
 // use cargo::ops::compile;
 use cargo_self::engine::version::VERSION;
 
@@ -15,24 +23,22 @@ use cargo_self::engine::version::VERSION;
 async fn main() {
     println!("Hello, Cargo Self v{}!", VERSION);
 
-    // let manifest_path_buf = PathBuf::from("./Cargo.toml");
+    let buf = BufWriter::new(Vec::new());
+
+    let shell = Shell::from_write(Box::new(buf));
+    let cwd = env::current_dir().unwrap();
+    let homedir = homedir(&cwd).unwrap();
+
+    let config = cargo::util::config::Config::new(shell, cwd, homedir);
+    // let config = cargo::util::config::Config::default().unwrap();
+
     let manifest_path = canonicalize(PathBuf::from("./Cargo.toml")).unwrap();
-    // let a = Box::new(std::io::stdout());
-    // let buf = BufWriter::new(Vec::new());
-    // Shell::;
 
-    // let shell = Shell::from_write(Box::new(buf));
-    // let shell = Shell::default();
-    let config = cargo::util::config::Config::default().unwrap();
-
-    // config.registry_cache_path();
-
-    // cargo::core::Workspace::new(manifest_path, config)
     let ws = cargo::core::Workspace::new(&manifest_path, &config).unwrap();
 
-    let options =
-        cargo::ops::CompileOptions::new(&config, cargo::core::compiler::CompileMode::Build)
-            .unwrap();
+    // let options =
+    //     cargo::ops::CompileOptions::new(&config, cargo::core::compiler::CompileMode::Build)
+    //         .unwrap();
 
     // set example to named workspace member
 
@@ -70,43 +76,42 @@ async fn main() {
 
     // let response = client.chat().create(request).await.unwrap();
 
-    println!("root: {:?}", ws.root());
+    let root = ws.root();
+    println!("root: {:?}", root);
 
-    let package = ws.current().unwrap();
+    for entry in WalkBuilder::new(root).hidden(true).build() {
+        let entry = entry.unwrap();
 
-    println!("package: {:?}", package.name());
+        let file_metadata = fs::metadata(entry.path()).unwrap();
+        let modified = file_metadata.modified().unwrap();
+        let file_type = file_metadata.file_type();
 
-    // let ser = package.serialized();
+        let file_parent = entry.path().parent().unwrap();
 
-    // serde_json::to_writer_pretty(std::io::stdout(), &ser).unwrap();
+        println!(
+            "entry: {:?} | is file: {} | last modified: {} | parent: {:?}",
+            entry.path(),
+            file_type.is_file(),
+            modified.elapsed().unwrap().as_secs(),
+            file_parent,
+        );
+    }
 
-    // println!("serialized: {:?}", ser);
+    // let package = ws.current().unwrap();
 
-    package.targets().iter().for_each(|target| {
-        println!("path: {:?}", target.src_path());
+    // println!("package: {:?}", package.name());
 
-        println!("target: {:?}\n", target);
-    });
+    // package.targets().iter().for_each(|target| {
+    //     println!("path: {:?}", target.src_path());
 
-    package.dependencies().iter().for_each(|dep| {
-        println!("dep: {:?}\n", dep);
-    });
-
-    // ws.members()
-    //     // .filter(|member| member.library().is_some())
-    //     .for_each(|package| {
-
-    //     });
-
-    // ws
-
-    // rustc::Rustc::new(path, wrapper, workspace_wrapper, rustup_rustc, cache_location, config)
-
-    let res = compile(&ws, &options).unwrap();
-
-    println!("host: {}", res.host);
-
-    // res.binaries.iter().for_each(|bin| {
-    //     println!("bin: {}", bin.path.display());
+    //     println!("target: {:?}\n", target);
     // });
+
+    // package.dependencies().iter().for_each(|dep| {
+    //     println!("dep: {:?}\n", dep);
+    // });
+
+    // let res = compile(&ws, &options).unwrap();
+
+    // println!("host: {}", res.host);
 }

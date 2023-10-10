@@ -10,4 +10,7 @@ license = "MIT AND Apache-2.0"
 [dependencies]
 async-openai = "0.14.3"
 cargo = "0.74.0"
+clap = "4.4.6"
+ignore = "0.4.20"
 tokio = { version = "1.33.0", features = ["full"] }
+walkdir = "2.4.0"
