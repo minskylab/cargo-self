@@ -1,6 +1,8 @@
 use std::{fs::canonicalize, path::PathBuf};
 
 use cargo::ops::compile;
+// use cargo::ops::compile;
+use cargo_self::engine::version::VERSION;
 
 // use async_openai::{
 //     types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role},
@@ -11,7 +13,7 @@ use cargo::ops::compile;
 
 #[tokio::main]
 async fn main() {
-    println!("Hello, Cargo Self v0.2.0!");
+    println!("Hello, Cargo Self v{}!", VERSION);
 
     // let manifest_path_buf = PathBuf::from("./Cargo.toml");
     let manifest_path = canonicalize(PathBuf::from("./Cargo.toml")).unwrap();
@@ -68,24 +70,41 @@ async fn main() {
 
     // let response = client.chat().create(request).await.unwrap();
 
-    ws.members()
-        // .filter(|member| member.library().is_some())
-        .for_each(|member| {
-            println!("member: {:?}", member.name());
-            member.targets().iter().for_each(|target| {
-                println!("target: {:?}\n", target);
-            });
+    println!("root: {:?}", ws.root());
 
-            member.dependencies().iter().for_each(|dep| {
-                println!("dep: {:?}\n", dep);
-            });
-        });
+    let package = ws.current().unwrap();
+
+    println!("package: {:?}", package.name());
+
+    // let ser = package.serialized();
+
+    // serde_json::to_writer_pretty(std::io::stdout(), &ser).unwrap();
+
+    // println!("serialized: {:?}", ser);
+
+    package.targets().iter().for_each(|target| {
+        println!("path: {:?}", target.src_path());
+
+        println!("target: {:?}\n", target);
+    });
+
+    package.dependencies().iter().for_each(|dep| {
+        println!("dep: {:?}\n", dep);
+    });
+
+    // ws.members()
+    //     // .filter(|member| member.library().is_some())
+    //     .for_each(|package| {
+
+    //     });
 
     // ws
 
     // rustc::Rustc::new(path, wrapper, workspace_wrapper, rustup_rustc, cache_location, config)
 
-    // let res = compile(&ws, &options).unwrap();
+    let res = compile(&ws, &options).unwrap();
+
+    println!("host: {}", res.host);
 
     // res.binaries.iter().for_each(|bin| {
     //     println!("bin: {}", bin.path.display());
