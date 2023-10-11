@@ -2,7 +2,7 @@ use std::{
     env,
     fs::{self, canonicalize},
     io::BufWriter,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 // use walkdir::WalkDir;
 
@@ -10,7 +10,7 @@ use ignore::{Walk, WalkBuilder};
 
 use cargo::{core::Shell, util::homedir};
 // use cargo::ops::compile;
-use cargo_self::engine::version::VERSION;
+use cargo_self::engine::{planner::Plan, version::VERSION};
 
 // use async_openai::{
 //     types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role},
@@ -21,20 +21,9 @@ use cargo_self::engine::version::VERSION;
 
 #[tokio::main]
 async fn main() {
-    println!("Hello, Cargo Self v{}!", VERSION);
+    let root = Path::new("./Cargo.toml");
 
-    let buf = BufWriter::new(Vec::new());
-
-    let shell = Shell::from_write(Box::new(buf));
-    let cwd = env::current_dir().unwrap();
-    let homedir = homedir(&cwd).unwrap();
-
-    let config = cargo::util::config::Config::new(shell, cwd, homedir);
-    // let config = cargo::util::config::Config::default().unwrap();
-
-    let manifest_path = canonicalize(PathBuf::from("./Cargo.toml")).unwrap();
-
-    let ws = cargo::core::Workspace::new(&manifest_path, &config).unwrap();
+    let plan = Plan::new(root);
 
     // let options =
     //     cargo::ops::CompileOptions::new(&config, cargo::core::compiler::CompileMode::Build)
@@ -75,27 +64,6 @@ async fn main() {
     //     .unwrap();
 
     // let response = client.chat().create(request).await.unwrap();
-
-    let root = ws.root();
-    println!("root: {:?}", root);
-
-    for entry in WalkBuilder::new(root).hidden(true).build() {
-        let entry = entry.unwrap();
-
-        let file_metadata = fs::metadata(entry.path()).unwrap();
-        let modified = file_metadata.modified().unwrap();
-        let file_type = file_metadata.file_type();
-
-        let file_parent = entry.path().parent().unwrap();
-
-        println!(
-            "entry: {:?} | is file: {} | last modified: {} | parent: {:?}",
-            entry.path(),
-            file_type.is_file(),
-            modified.elapsed().unwrap().as_secs(),
-            file_parent,
-        );
-    }
 
     // let package = ws.current().unwrap();
 
