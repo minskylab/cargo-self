@@ -3,7 +3,9 @@ use ignore::WalkBuilder;
 use sha2::{Digest, Sha256};
 
 use std::{
+    collections::{HashMap, HashSet},
     env,
+    fmt::Debug,
     fs::{canonicalize, metadata, File},
     io::{self, BufWriter},
     path::{Path, PathBuf},
@@ -17,7 +19,7 @@ pub struct Plan {
 #[derive(Debug)]
 pub enum Action {
     CodeToRO { element: Element },
-    ROToCode { element: Element },
+    // ROToCode { element: Element },
     FolderToRO { element: Element },
 }
 
@@ -35,7 +37,7 @@ impl Iterator for Plan {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Element {
     path: PathBuf,
     parent: PathBuf,
@@ -47,6 +49,20 @@ pub struct Element {
     self_path: Option<PathBuf>,
     self_content: Option<String>,
     self_hash: Option<String>,
+}
+
+impl Debug for Element {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Element")
+            .field("path", &self.path)
+            // .field("parent", &self.parent)
+            // .field("modified", &self.modified)
+            // // .field("is_file", &self.is_file)
+            .field("depth", &self.depth)
+            // .field("self_path", &self.self_path)
+            // .field("self_hash", &self.self_hash)
+            .finish()
+    }
 }
 
 impl Plan {
@@ -113,8 +129,12 @@ impl Plan {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
 
-        let (mut files, mut dirs): (Vec<&mut Element>, Vec<&mut Element>) =
+        let (mut files, dirs): (Vec<&mut Element>, Vec<&mut Element>) =
             elements.iter_mut().partition(|element| element.is_file);
+
+        let parents: HashSet<_> = dirs.iter().map(|d| d.path.clone()).collect();
+
+        let mut parents_hm: HashMap<_, _> = parents.iter().map(|p| (p.clone(), 0)).collect();
 
         files.iter_mut().for_each(|element| {
             let element_path = element.path.clone();
@@ -150,16 +170,47 @@ impl Plan {
 
             let content = std::fs::read_to_string(element_path).unwrap();
 
-            // element.content = Some(content.clone());
+            element.content = Some(content.clone());
 
             element.self_path = Some(new_self_file);
-            // element.self_content = Some(content);
+            element.self_content = Some(content);
             element.self_hash = Some(format!("{:x}", hash));
+
+            parents_hm.insert(
+                element.parent.clone(),
+                parents_hm.get(&element.parent).unwrap() + 1,
+            );
         });
 
-        files.append(&mut dirs);
+        // files.append(&mut dirs);
 
-        files.iter().map(|x| &**x).cloned().collect()
+        let mut final_elements_list: Vec<Element> = Vec::new();
+
+        files.iter().for_each(|x| {
+            parents_hm.insert(x.parent.clone(), parents_hm.get(&x.parent).unwrap() - 1);
+
+            final_elements_list.push((**x).clone());
+
+            if parents_hm.get(&x.parent).unwrap() == &0 {
+                let parent = dirs.iter().find(|y| y.path == x.parent).unwrap().to_owned();
+
+                final_elements_list.push((**parent).clone());
+            }
+        });
+
+        // println!("{:?}", parents_hm);
+
+        // println!();
+
+        // for aa in final_elements_list.iter() {
+        //     println!("aa: {:?}", aa);
+        // }
+
+        // println!();
+
+        final_elements_list.reverse();
+
+        final_elements_list
     }
 
     pub fn analyze(&self) -> AnalyzeResult {
