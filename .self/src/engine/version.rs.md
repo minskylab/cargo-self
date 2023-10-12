@@ -1,1 +1,3 @@
-pub const VERSION: &str = "0.1.4";
+Resource: No significant resources identified.
+
+Resource: No significant operations identified.

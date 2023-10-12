@@ -1,17 +1,44 @@
-use std::path::Path;
+use std::path::PathBuf;
 
-use cargo_self::engine::planner::Plan;
+use async_openai::Client;
+use cargo_self::engine::{
+    model::create_new_default_request,
+    planner::{Action, Plan},
+};
 
 #[tokio::main]
 async fn main() {
-    let root = Path::new("./Cargo.toml");
+    let root = PathBuf::from("./Cargo.toml");
 
     let plan = Plan::new(root);
 
-    // plan.analyze();
+    let client = Client::new();
 
     for step in plan {
-        println!("step: {:?}", step);
+        match step {
+            Action::CodeToRO { element } => {
+                // println!("code to ro: {:?}", element);
+                let req = create_new_default_request(element.clone().content.unwrap());
+
+                let res = client.chat().create(req).await.unwrap();
+
+                let new_self_content = res
+                    .choices
+                    .first()
+                    .unwrap()
+                    .message
+                    .content
+                    .to_owned()
+                    .unwrap();
+
+                element.write_new_self_content(new_self_content);
+
+                // println!("foo: {:?}", foo)
+            }
+            Action::FolderToRO { element } => {
+                println!("folder to ro: {:?}", element);
+            }
+        }
     }
 
     // let options =
@@ -27,28 +54,7 @@ async fn main() {
     // let request = CreateChatCompletionRequestArgs::default()
     //     .max_tokens(512u16)
     //     .model("gpt-3.5-turbo")
-    //     .messages([
-    //         ChatCompletionRequestMessageArgs::default()
-    //             .role(Role::System)
-    //             .content("You are a helpful assistant.")
-    //             .build()
-    //             .unwrap(),
-    //         ChatCompletionRequestMessageArgs::default()
-    //             .role(Role::User)
-    //             .content("Who won the world series in 2020?")
-    //             .build()
-    //             .unwrap(),
-    //         ChatCompletionRequestMessageArgs::default()
-    //             .role(Role::Assistant)
-    //             .content("The Los Angeles Dodgers won the World Series in 2020.")
-    //             .build()
-    //             .unwrap(),
-    //         ChatCompletionRequestMessageArgs::default()
-    //             .role(Role::User)
-    //             .content("Where was it played?")
-    //             .build()
-    //             .unwrap(),
-    //     ])
+    //     .messages()
     //     .build()
     //     .unwrap();
 

@@ -1,74 +1,37 @@
-use std::path::Path;
+- ```yaml
+  Resource: Library Imports
+      - std::path::PathBuf, async_openai::types::CreateChatCompletionRequestArgs, async_openai::Client, cargo_self::engine::model::create_new_default_request, cargo_self::engine::planner::{Action, Plan}, tokio::main
 
-use cargo_self::engine::planner::Plan;
+  Resource: Main Function (main)
+      Operation: plan
+          - Create a new plan object for the specified Cargo project root directory
+      Operation: client
+          - Create a new OpenAI client
+      Operation: for loop
+          - Iterate over each step in the plan
+      Operation: match step
+          - Match the type of step and execute the associated action
+      Operation: Action::CodeToRO
+          - If the step is a CodeToRO action, perform the following operations:
+              - Print "code to ro" followed by the element
+              - Create a new default completion request with the element's content
+              - Create a chat completion using the client with the request
+              - Retrieve the new self content from the response
+              - Write the new self content to the element
+              - Print "foo" followed by the foo value
+      Operation: Action::FolderToRO
+          - If the step is a FolderToRO action, perform the following operations:
+              - Print "folder to ro" followed by the element
 
-#[tokio::main]
-async fn main() {
-    let root = Path::new("./Cargo.toml");
-
-    let plan = Plan::new(root);
-
-    // plan.analyze();
-
-    for step in plan {
-        println!("step: {:?}", step);
-    }
-
-    // let options =
-    //     cargo::ops::CompileOptions::new(&config, cargo::core::compiler::CompileMode::Build)
-    //         .unwrap();
-
-    // set example to named workspace member
-
-    // println!("options.spec: {}", options.spec);
-
-    // let client = Client::new();
-
-    // let request = CreateChatCompletionRequestArgs::default()
-    //     .max_tokens(512u16)
-    //     .model("gpt-3.5-turbo")
-    //     .messages([
-    //         ChatCompletionRequestMessageArgs::default()
-    //             .role(Role::System)
-    //             .content("You are a helpful assistant.")
-    //             .build()
-    //             .unwrap(),
-    //         ChatCompletionRequestMessageArgs::default()
-    //             .role(Role::User)
-    //             .content("Who won the world series in 2020?")
-    //             .build()
-    //             .unwrap(),
-    //         ChatCompletionRequestMessageArgs::default()
-    //             .role(Role::Assistant)
-    //             .content("The Los Angeles Dodgers won the World Series in 2020.")
-    //             .build()
-    //             .unwrap(),
-    //         ChatCompletionRequestMessageArgs::default()
-    //             .role(Role::User)
-    //             .content("Where was it played?")
-    //             .build()
-    //             .unwrap(),
-    //     ])
-    //     .build()
-    //     .unwrap();
-
-    // let response = client.chat().create(request).await.unwrap();
-
-    // let package = ws.current().unwrap();
-
-    // println!("package: {:?}", package.name());
-
-    // package.targets().iter().for_each(|target| {
-    //     println!("path: {:?}", target.src_path());
-
-    //     println!("target: {:?}\n", target);
-    // });
-
-    // package.dependencies().iter().for_each(|dep| {
-    //     println!("dep: {:?}\n", dep);
-    // });
-
-    // let res = compile(&ws, &options).unwrap();
-
-    // println!("host: {}", res.host);
-}
+  Commented Out Code:
+      - cargo::ops::CompileOptions::new(..)
+      - Set example to named workspace member
+      - Print options.spec
+      - Create a new OpenAI chat completion request with specific parameters
+      - Create a chat completion using the client with the request
+      - Get the package name from the workspace
+      - Print each target's source path and target itself
+      - Iterate over dependencies and print each one
+      - Compile the workspace with the options
+      - Print the resulting host value
+  ```

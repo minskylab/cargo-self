@@ -12,7 +12,7 @@ use std::{
 };
 
 pub struct Plan {
-    // root: &'static Path,
+    // root: PathBuf,
     elements_list: Vec<Element>,
 }
 
@@ -44,7 +44,7 @@ pub struct Element {
     modified: u64,
     is_file: bool,
     depth: usize,
-    content: Option<String>,
+    pub content: Option<String>,
 
     self_path: Option<PathBuf>,
     self_content: Option<String>,
@@ -65,18 +65,31 @@ impl Debug for Element {
     }
 }
 
-impl Plan {
-    pub fn new(_root: &'static Path) -> Self {
-        // let s = Self { root };
+impl Element {
+    pub fn write_new_self_content(&self, new_self_content: String) -> bool {
+        if !self.is_file {
+            return false;
+        }
 
-        let elements = Plan::explore(true);
+        let self_path = self.self_path.as_ref().unwrap();
+
+        std::fs::write(self_path, new_self_content).unwrap();
+
+        true
+    }
+}
+
+impl Plan {
+    pub fn new(root: PathBuf) -> Self {
+        let elements = Plan::explore(root.clone(), true);
 
         Self {
+            // root,
             elements_list: elements,
         }
     }
 
-    fn explore(with_default_shell: bool) -> Vec<Element> {
+    fn explore(root: PathBuf, with_default_shell: bool) -> Vec<Element> {
         let buf = BufWriter::new(Vec::new());
 
         let config = if with_default_shell {
@@ -89,7 +102,7 @@ impl Plan {
             cargo::util::config::Config::new(shell, cwd, homedir)
         };
 
-        let manifest_path = canonicalize(PathBuf::from("./Cargo.toml")).unwrap();
+        let manifest_path = canonicalize(root).unwrap();
 
         let ws = cargo::core::Workspace::new(&manifest_path, &config).unwrap();
 
@@ -161,8 +174,6 @@ impl Plan {
             add_extension(&mut new_file_name, "md");
 
             let new_self_file = self_root.join(new_file_name);
-
-            // println!("new_self_file: {:?}", new_self_file);
 
             std::fs::create_dir_all(new_self_path).unwrap();
 

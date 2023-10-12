@@ -1,14 +1,8 @@
-use clap::{Parser, Subcommand};
+Resource: Library Imports
+  - clap
 
-#[derive(Debug, Parser)]
-#[command(name = "cargo-self")]
-#[command(about = "Cargo extended with LLM", long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
+Resource: Main Object
+  - Cli struct
 
-#[derive(Debug, Subcommand)]
-enum Commands {
-    Run,
-}
+  Operation: Run (Subcommand of Cli)
+    - Run the specified command
