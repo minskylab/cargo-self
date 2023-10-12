@@ -168,7 +168,7 @@ impl Plan {
 
             std::fs::copy(element_path.clone(), new_self_file.clone()).unwrap();
 
-            let content = std::fs::read_to_string(element_path).unwrap();
+            let content = std::fs::read_to_string(element_path).unwrap_or("".to_string());
 
             element.content = Some(content.clone());
 
@@ -181,8 +181,6 @@ impl Plan {
                 parents_hm.get(&element.parent).unwrap() + 1,
             );
         });
-
-        // files.append(&mut dirs);
 
         let mut final_elements_list: Vec<Element> = Vec::new();
 
@@ -197,16 +195,6 @@ impl Plan {
                 final_elements_list.push((**parent).clone());
             }
         });
-
-        // println!("{:?}", parents_hm);
-
-        // println!();
-
-        // for aa in final_elements_list.iter() {
-        //     println!("aa: {:?}", aa);
-        // }
-
-        // println!();
 
         final_elements_list.reverse();
 

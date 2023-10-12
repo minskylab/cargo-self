@@ -1,6 +1,6 @@
 [package]
 name = "cargo-self"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "A tool to build and install a package using cargo enhanced with LLM models."
 license = "MIT AND Apache-2.0"
