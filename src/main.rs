@@ -1,29 +1,18 @@
-use std::{
-    env,
-    fs::{self, canonicalize},
-    io::BufWriter,
-    path::{Path, PathBuf},
-};
-// use walkdir::WalkDir;
+use std::path::Path;
 
-use ignore::{Walk, WalkBuilder};
-
-use cargo::{core::Shell, util::homedir};
-// use cargo::ops::compile;
-use cargo_self::engine::{planner::Plan, version::VERSION};
-
-// use async_openai::{
-//     types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role},
-//     Client,
-// };
-
-// use cargo::{ops::compile, util::rustc};
+use cargo_self::engine::planner::Plan;
 
 #[tokio::main]
 async fn main() {
     let root = Path::new("./Cargo.toml");
 
     let plan = Plan::new(root);
+
+    // plan.analyze();
+
+    for step in plan {
+        println!("step: {:?}", step);
+    }
 
     // let options =
     //     cargo::ops::CompileOptions::new(&config, cargo::core::compiler::CompileMode::Build)

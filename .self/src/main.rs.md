@@ -1,37 +1,22 @@
----
+use std::path::Path;
 
----
-use std::{fs::canonicalize, path::PathBuf};
-
-// use async_openai::{
-//     types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role},
-//     Client,
-// };
-
-use cargo::ops::compile;
+use cargo_self::engine::planner::Plan;
 
 #[tokio::main]
 async fn main() {
-    println!("Hello, Cargo Self v0.2.0!");
+    let root = Path::new("./Cargo.toml");
 
-    // let manifest_path_buf = PathBuf::from("./Cargo.toml");
-    let manifest_path = canonicalize(PathBuf::from("./Cargo.toml")).unwrap();
-    // let a = Box::new(std::io::stdout());
-    // let buf = BufWriter::new(Vec::new());
-    // Shell::;
+    let plan = Plan::new(root);
 
-    // let shell = Shell::from_write(Box::new(buf));
-    // let shell = Shell::default();
-    let config = cargo::util::config::Config::default().unwrap();
+    // plan.analyze();
 
-    // config.registry_cache_path();
+    for step in plan {
+        println!("step: {:?}", step);
+    }
 
-    // cargo::core::Workspace::new(manifest_path, config)
-    let ws = cargo::core::Workspace::new(&manifest_path, &config).unwrap();
-
-    let options =
-        cargo::ops::CompileOptions::new(&config, cargo::core::compiler::CompileMode::Build)
-            .unwrap();
+    // let options =
+    //     cargo::ops::CompileOptions::new(&config, cargo::core::compiler::CompileMode::Build)
+    //         .unwrap();
 
     // set example to named workspace member
 
@@ -69,15 +54,21 @@ async fn main() {
 
     // let response = client.chat().create(request).await.unwrap();
 
-    ws.members()
-        // .filter(|member| member.library().is_some())
-        .for_each(|member| {
-            println!("member: {}", member.name());
-        });
+    // let package = ws.current().unwrap();
+
+    // println!("package: {:?}", package.name());
+
+    // package.targets().iter().for_each(|target| {
+    //     println!("path: {:?}", target.src_path());
+
+    //     println!("target: {:?}\n", target);
+    // });
+
+    // package.dependencies().iter().for_each(|dep| {
+    //     println!("dep: {:?}\n", dep);
+    // });
 
     // let res = compile(&ws, &options).unwrap();
 
-    // res.binaries.iter().for_each(|bin| {
-    //     println!("bin: {}", bin.path.display());
-    // });
+    // println!("host: {}", res.host);
 }
