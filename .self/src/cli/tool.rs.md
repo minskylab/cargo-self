@@ -1,8 +1,8 @@
 Resource: Library Imports
-  - clap
+- clap
 
 Resource: Main Object
-  - Cli struct
+- Cli
 
-  Operation: Run (Subcommand of Cli)
-    - Run the specified command
+Operation: command
+- [Subcommand: Run]

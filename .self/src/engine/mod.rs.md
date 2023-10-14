@@ -1,10 +1,10 @@
-- ```yaml
-  Resource: Library Imports
-      - N/A
+Resource: Library Imports
+- std
 
-  Resource: Main Object
-      - mod (module) model
-      - mod (module) planner
-      - mod (module) prompts
-      - mod (module) version
-  ```
+Resource: Module "model"
+  
+Resource: Module "planner"
+
+Resource: Module "prompts"
+
+Resource: Module "version"

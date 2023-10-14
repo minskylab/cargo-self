@@ -25,13 +25,12 @@ Guidelines for R&O Representation:
    a. Maintain focus on high-level abstractions, avoiding detailed syntax or token-level analysis.
    b. Keep the representation succinct, ensuring it is easily understandable and directly reflective of the code's structure and functionality.
 
-Example of use:
+Example:
 
 input:
 
 - path: /Users/bregy/Documents/minskylab/plexo-core/src/graphql/queries/resources.rs
 - source:
-
   - ```rust
       use std::str::FromStr;
 

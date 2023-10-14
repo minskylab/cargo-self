@@ -17,64 +17,49 @@ async fn main() {
     for step in plan {
         match step {
             Action::CodeToRO { element } => {
-                // println!("code to ro: {:?}", element);
+                println!("code to ro: {:?}", element);
+
                 let req = create_new_default_request(element.clone().content.unwrap());
 
-                let res = client.chat().create(req).await.unwrap();
+                if let Ok(res) = client.chat().create(req).await {
+                    let new_self_content = res
+                        .choices
+                        .first()
+                        .unwrap()
+                        .message
+                        .content
+                        .to_owned()
+                        .unwrap();
 
-                let new_self_content = res
-                    .choices
-                    .first()
-                    .unwrap()
-                    .message
-                    .content
-                    .to_owned()
-                    .unwrap();
-
-                element.write_new_self_content(new_self_content);
-
-                // println!("foo: {:?}", foo)
+                    element.write_new_self_content(new_self_content);
+                }
             }
-            Action::FolderToRO { element } => {
+            Action::FolderToRO { element, neighbors } => {
                 println!("folder to ro: {:?}", element);
+                println!("neighbors: {:?}", neighbors);
             }
         }
     }
 
-    // let options =
-    //     cargo::ops::CompileOptions::new(&config, cargo::core::compiler::CompileMode::Build)
-    //         .unwrap();
+    // Definitions:
+    // - A "Resource" refers to crucial structures, entities, or data types within the code.
+    // - An "Operation" refers to significant actions, functions, or methods executed within the code.
 
-    // set example to named workspace member
+    // Guidelines for R&O Representation:
+    // 1. Resources Identification:
+    //    a. Library Imports: List the primary libraries or modules being imported.
+    //    b. Input Filters: Catalog input structures or filters.
+    //    c. Main Object: Identify the principal object, struct, or class.
 
-    // println!("options.spec: {}", options.spec);
+    // 2. Operations Identification:
+    //    a. Under the main object, struct, or class, list the associated operations.
+    //    b. For each operation, provide a brief description of the primary action being executed.
 
-    // let client = Client::new();
+    // 3. Structuring:
+    //    a. Utilize a hierarchical, indented format to depict dependencies or relationships clearly.
+    //    b. Ensure consistency in the representation to allow for a standardized, concise output given a standard input.
 
-    // let request = CreateChatCompletionRequestArgs::default()
-    //     .max_tokens(512u16)
-    //     .model("gpt-3.5-turbo")
-    //     .messages()
-    //     .build()
-    //     .unwrap();
-
-    // let response = client.chat().create(request).await.unwrap();
-
-    // let package = ws.current().unwrap();
-
-    // println!("package: {:?}", package.name());
-
-    // package.targets().iter().for_each(|target| {
-    //     println!("path: {:?}", target.src_path());
-
-    //     println!("target: {:?}\n", target);
-    // });
-
-    // package.dependencies().iter().for_each(|dep| {
-    //     println!("dep: {:?}\n", dep);
-    // });
-
-    // let res = compile(&ws, &options).unwrap();
-
-    // println!("host: {}", res.host);
+    // 4. Conciseness and Abstraction:
+    //    a. Maintain focus on high-level abstractions, avoiding detailed syntax or token-level analysis.
+    //    b. Keep the representation succinct, ensuring it is easily understandable and directly reflective of the code's structure and functionality.
 }

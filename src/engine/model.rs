@@ -20,7 +20,7 @@ pub fn create_new_default_request(source_code: String) -> CreateChatCompletionRe
             ChatCompletionRequestMessageArgs::default()
                 .role(Role::User)
                 .content(format!(
-                    "give me only the output (in yaml format) of the code below:\n{}",
+                    "give me only the output (in plain yaml format, don't use yaml code box syntax, only a parsable yaml result) of the code below:\n{}",
                     source_code
                 ))
                 .build()

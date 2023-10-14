@@ -13,14 +13,20 @@ use std::{
 
 pub struct Plan {
     // root: PathBuf,
+    nodes: Vec<Element>,
     elements_list: Vec<Element>,
 }
 
 #[derive(Debug)]
 pub enum Action {
-    CodeToRO { element: Element },
+    CodeToRO {
+        element: Element,
+    },
     // ROToCode { element: Element },
-    FolderToRO { element: Element },
+    FolderToRO {
+        element: Element,
+        neighbors: Vec<Element>,
+    },
 }
 
 impl Iterator for Plan {
@@ -31,7 +37,10 @@ impl Iterator for Plan {
             if element.is_file {
                 Action::CodeToRO { element }
             } else {
-                Action::FolderToRO { element }
+                Action::FolderToRO {
+                    element: element.clone(),
+                    neighbors: element.find_children(&self.nodes),
+                }
             }
         })
     }
@@ -77,6 +86,41 @@ impl Element {
 
         true
     }
+
+    pub fn is_dirty(&self) -> bool {
+        if !self.is_file {
+            return false;
+        }
+
+        let element_path = self.path.as_path();
+
+        let mut file = File::open(element_path).unwrap();
+        let mut sha256 = Sha256::new();
+
+        io::copy(&mut file, &mut sha256).unwrap();
+
+        let hash = sha256.finalize();
+
+        let self_hash = self.self_hash.clone().unwrap();
+        println!("old hash: {}", self_hash);
+        println!("new hash: {:x}", hash);
+
+        self_hash != format!("{:x}", hash)
+    }
+
+    pub fn find_children(&self, elements: &Vec<Element>) -> Vec<Element> {
+        let mut children: Vec<Element> = Vec::new();
+
+        // println!("elements: {:?}", elements);
+
+        for element in elements {
+            if element.parent == self.path {
+                children.push(element.clone());
+            }
+        }
+
+        children
+    }
 }
 
 impl Plan {
@@ -84,7 +128,7 @@ impl Plan {
         let elements = Plan::explore(root.clone(), true);
 
         Self {
-            // root,
+            nodes: elements.clone(),
             elements_list: elements,
         }
     }
@@ -177,7 +221,9 @@ impl Plan {
 
             std::fs::create_dir_all(new_self_path).unwrap();
 
-            std::fs::copy(element_path.clone(), new_self_file.clone()).unwrap();
+            if !new_self_file.exists() {
+                std::fs::copy(element_path.clone(), new_self_file.clone()).unwrap();
+            }
 
             let content = std::fs::read_to_string(element_path).unwrap_or("".to_string());
 

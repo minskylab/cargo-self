@@ -1,3 +1,5 @@
-Resource: No significant resources identified.
+Resource: Main Object
+- Operation: None
 
-Resource: No significant operations identified.
+Resource: Constants
+- VERSION: "0.1.4"
