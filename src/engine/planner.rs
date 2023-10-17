@@ -1,10 +1,12 @@
+use async_openai::types::{CreateChatCompletionRequest, CreateChatCompletionResponse};
 use cargo::{core::Shell, util::homedir};
 use ignore::WalkBuilder;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use std::{
     collections::{HashMap, HashSet},
-    env,
+    env::{self, current_dir},
     fmt::Debug,
     fs::{canonicalize, metadata, File},
     io::{self, BufWriter},
@@ -14,10 +16,10 @@ use std::{
 pub struct Plan {
     // root: PathBuf,
     nodes: Vec<Element>,
-    elements_list: Vec<Element>,
+    nodes_buffer: Vec<Element>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Action {
     CodeToRO {
         element: Element,
@@ -25,7 +27,7 @@ pub enum Action {
     // ROToCode { element: Element },
     FolderToRO {
         element: Element,
-        neighbors: Vec<Element>,
+        children: Vec<Element>,
     },
 }
 
@@ -33,20 +35,20 @@ impl Iterator for Plan {
     type Item = Action;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.elements_list.pop().map(|element| {
+        self.nodes_buffer.pop().map(|element| {
             if element.is_file {
                 Action::CodeToRO { element }
             } else {
                 Action::FolderToRO {
                     element: element.clone(),
-                    neighbors: element.find_children(&self.nodes),
+                    children: element.find_children(&self.nodes),
                 }
             }
         })
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Element {
     path: PathBuf,
     parent: PathBuf,
@@ -56,9 +58,25 @@ pub struct Element {
     pub content: Option<String>,
 
     self_path: Option<PathBuf>,
-    self_content: Option<String>,
+    pub self_content: Option<String>,
     self_hash: Option<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ActionResult {
+    pub llm_executed: bool,
+    pub llm_input: Option<CreateChatCompletionRequest>,
+    pub llm_result: Option<CreateChatCompletionResponse>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ComputationUnit {
+    pub action_executed: Action,
+    pub result: Option<ActionResult>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AnalyzeResult {}
 
 impl Debug for Element {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -76,42 +94,45 @@ impl Debug for Element {
 
 impl Element {
     pub fn write_new_self_content(&self, new_self_content: String) -> bool {
-        if !self.is_file {
-            return false;
-        }
+        let self_path = self.self_path.clone().unwrap();
 
-        let self_path = self.self_path.as_ref().unwrap();
+        // if !self.is_file {
+        //     // i.e. is a directory
+        //     add_extension(&mut self_path, "md");
+        // }
 
         std::fs::write(self_path, new_self_content).unwrap();
-
         true
     }
 
-    pub fn is_dirty(&self) -> bool {
-        if !self.is_file {
-            return false;
-        }
+    pub fn relative_path(&self) -> PathBuf {
+        let root = current_dir().unwrap();
 
-        let element_path = self.path.as_path();
-
-        let mut file = File::open(element_path).unwrap();
-        let mut sha256 = Sha256::new();
-
-        io::copy(&mut file, &mut sha256).unwrap();
-
-        let hash = sha256.finalize();
-
-        let self_hash = self.self_hash.clone().unwrap();
-        println!("old hash: {}", self_hash);
-        println!("new hash: {:x}", hash);
-
-        self_hash != format!("{:x}", hash)
+        self.path.strip_prefix(root).unwrap().to_path_buf()
     }
+    // pub fn is_dirty(&self) -> bool {
+    //     if !self.is_file {
+    //         return false;
+    //     }
+
+    //     let element_path = self.path.as_path();
+
+    //     let mut file = File::open(element_path).unwrap();
+    //     let mut sha256 = Sha256::new();
+
+    //     io::copy(&mut file, &mut sha256).unwrap();
+
+    //     let hash = sha256.finalize();
+
+    //     let self_hash = self.self_hash.clone().unwrap();
+    //     println!("old hash: {}", self_hash);
+    //     println!("new hash: {:x}", hash);
+
+    //     self_hash != format!("{:x}", hash)
+    // }
 
     pub fn find_children(&self, elements: &Vec<Element>) -> Vec<Element> {
         let mut children: Vec<Element> = Vec::new();
-
-        // println!("elements: {:?}", elements);
 
         for element in elements {
             if element.parent == self.path {
@@ -121,6 +142,16 @@ impl Element {
 
         children
     }
+
+    pub fn find_parent(&self, elements: &Vec<Element>) -> Option<Element> {
+        for element in elements {
+            if element.path == self.parent {
+                return Some(element.clone());
+            }
+        }
+
+        None
+    }
 }
 
 impl Plan {
@@ -129,7 +160,7 @@ impl Plan {
 
         Self {
             nodes: elements.clone(),
-            elements_list: elements,
+            nodes_buffer: elements,
         }
     }
 
@@ -186,7 +217,7 @@ impl Plan {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
 
-        let (mut files, dirs): (Vec<&mut Element>, Vec<&mut Element>) =
+        let (mut files, mut dirs): (Vec<&mut Element>, Vec<&mut Element>) =
             elements.iter_mut().partition(|element| element.is_file);
 
         let parents: HashSet<_> = dirs.iter().map(|d| d.path.clone()).collect();
@@ -221,8 +252,12 @@ impl Plan {
 
             std::fs::create_dir_all(new_self_path).unwrap();
 
+            let mut self_content = None;
+
             if !new_self_file.exists() {
                 std::fs::copy(element_path.clone(), new_self_file.clone()).unwrap();
+            } else {
+                self_content = Some(std::fs::read_to_string(new_self_file.clone()).unwrap());
             }
 
             let content = std::fs::read_to_string(element_path).unwrap_or("".to_string());
@@ -230,13 +265,72 @@ impl Plan {
             element.content = Some(content.clone());
 
             element.self_path = Some(new_self_file);
-            element.self_content = Some(content);
+            element.self_content = self_content;
             element.self_hash = Some(format!("{:x}", hash));
 
             parents_hm.insert(
                 element.parent.clone(),
                 parents_hm.get(&element.parent).unwrap() + 1,
             );
+        });
+
+        dirs.iter_mut().for_each(|element| {
+            let element_path = element.path.clone();
+
+            // let mut file = File::open(element_path.clone()).unwrap();
+            // let mut sha256 = Sha256::new();
+
+            // io::copy(&mut file, &mut sha256).unwrap();
+
+            // let hash = sha256.finalize();
+
+            // println!("hash is: {:x}", hash);
+
+            let self_root = Path::new("./.self");
+
+            let p = element.parent.clone();
+
+            let Ok(p) = p.strip_prefix(root) else {
+                return;
+            };
+
+            let new_self_path = self_root.join(p);
+
+            // println!("new_self_path: {:?}", new_self_path);
+
+            let mut new_folder_name = element_path.strip_prefix(root).unwrap().to_path_buf();
+
+            // println!("new_folder_name: {:?}", new_folder_name);
+
+            add_extension(&mut new_folder_name, "md");
+
+            let new_self_folder = self_root.join(new_folder_name);
+
+            // println!("new_self_folder: {:?}", new_self_folder);
+
+            std::fs::create_dir_all(new_self_path).unwrap();
+
+            let mut self_content = None;
+
+            if !new_self_folder.exists() {
+                let placeholder_content = "This is a placeholder for a folder. It will be replaced by the result of the following command:\n\n```llm\nfolder to ro\n```";
+                std::fs::write(new_self_folder.clone(), placeholder_content).unwrap();
+            } else {
+                self_content = Some(std::fs::read_to_string(new_self_folder.clone()).unwrap());
+            }
+
+            // let content = std::fs::read_to_string(element_path).unwrap_or("".to_string());
+
+            // element.content = Some(content.clone());
+
+            element.self_path = Some(new_self_folder);
+            element.self_content = self_content;
+            // element.self_hash = Some(format!("{:x}", hash));
+
+            // parents_hm.insert(
+            //     element.parent.clone(),
+            //     parents_hm.get(&element.parent).unwrap() + 1,
+            // );
         });
 
         let mut final_elements_list: Vec<Element> = Vec::new();
@@ -262,8 +356,6 @@ impl Plan {
         AnalyzeResult {}
     }
 }
-
-pub struct AnalyzeResult {}
 
 fn add_extension(path: &mut std::path::PathBuf, extension: impl AsRef<std::path::Path>) {
     match path.extension() {

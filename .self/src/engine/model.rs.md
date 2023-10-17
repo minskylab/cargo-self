@@ -1,17 +1,22 @@
 Resource: Library Imports
-    - async_openai.types
+  - async_openai.types
 
-Resource: Prompts
-    - DEFAULT_SYSTEM_PROMPT
+Resource: Operation: create_code_to_ro
+  - Set up CreateChatCompletionRequestArgs with default values
+  - Set max_tokens to 512
+  - Set model to "gpt-3.5-turbo"
+  - Set messages as an array of ChatCompletionRequestMessageArgs:
+    - Set role to Role::System
+    - Set content to DEFAULT_SYSTEM_PROMPT
+    - Set role to Role::User
+    - Set content to a formatted string that includes the source code parameter
 
-Operation: create_new_default_request
-    - Create a new chat completion request with default arguments
-    - Set the maximum tokens to 512
-    - Set the model to "gpt-3.5-turbo"
-    - Create an array of messages
-        - First message:
-            - Set the role to system
-            - Set the content to the default system prompt
-        - Second message:
-            - Set the role to user
-            - Set the content to a formatted string containing the source code
+Resource: Operation: create_folder_to_ro
+  - Set up CreateChatCompletionRequestArgs with default values
+  - Set max_tokens to 512
+  - Set model to "gpt-3.5-turbo"
+  - Set messages as an array of ChatCompletionRequestMessageArgs:
+    - Set role to Role::System
+    - Set content to DEFAULT_SYSTEM_PROMPT
+    - Set role to Role::User
+    - Set content to a formatted string that includes the sources joined with newlines

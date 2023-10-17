@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use async_openai::Client;
 use cargo_self::engine::{
-    model::create_new_default_request,
+    model::{create_code_to_ro, create_folder_to_ro},
     planner::{Action, Plan},
 };
 
@@ -14,12 +14,14 @@ async fn main() {
 
     let client = Client::new();
 
+    // struct ElementRule {}
+
     for step in plan {
         match step {
             Action::CodeToRO { element } => {
                 println!("code to ro: {:?}", element);
 
-                let req = create_new_default_request(element.clone().content.unwrap());
+                let req = create_code_to_ro(element.clone().content.unwrap());
 
                 if let Ok(res) = client.chat().create(req).await {
                     let new_self_content = res
@@ -34,9 +36,24 @@ async fn main() {
                     element.write_new_self_content(new_self_content);
                 }
             }
-            Action::FolderToRO { element, neighbors } => {
+            Action::FolderToRO { element, children } => {
                 println!("folder to ro: {:?}", element);
-                println!("neighbors: {:?}", neighbors);
+                println!("neighbors: {:?}", children);
+
+                let req = create_folder_to_ro(element.clone(), children);
+
+                if let Ok(res) = client.chat().create(req).await {
+                    let new_self_content = res
+                        .choices
+                        .first()
+                        .unwrap()
+                        .message
+                        .content
+                        .to_owned()
+                        .unwrap();
+
+                    element.write_new_self_content(new_self_content);
+                }
             }
         }
     }
