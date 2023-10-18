@@ -1,6 +1,3 @@
 Resource: Library Imports
-- pub (mod)
-
-Resource: Modules
-- cli
-- engine
+- mod: cli
+- mod: engine

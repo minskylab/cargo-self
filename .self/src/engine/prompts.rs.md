@@ -1,8 +1,8 @@
 Resource: Library Imports
-  - std, async_graphql, chrono, uuid, crate
+- std, async_graphql, chrono, uuid, crate
 
 Resource: Input Filters
-  - TaskFilter, MemberFilter, TeamFilter, ProjectFilter
+- TaskFilter, MemberFilter, TeamFilter, ProjectFilter
 
 Resource: ResourcesQuery Object
   Operation: tasks

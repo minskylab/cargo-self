@@ -1,5 +1,5 @@
 Resource: Library Imports
-- mod: model
-- mod: planner
-- mod: prompts
-- mod: version
+- mod:model
+- mod:planner
+- mod:prompts
+- mod:version

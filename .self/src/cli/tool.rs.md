@@ -1,14 +1,14 @@
 Resource: Library Imports
-- clap
+  - clap
 
 Resource: Main Object
-- Cli struct
+  - Cli struct
 
-Operation: Subcommand
-- Parse the subcommand specified in command line input
+Operation: Command Declaration
+  - name: "cargo-self"
+  - about: "Cargo extended with LLM"
+  - long_about: None
 
-Resource: Commands Enum
-- Subcommand enum for Cli struct
-
-Operation: Run
-- Execute the "run" subcommand
+Operation: Subcommand Declaration
+  - enum: Commands
+  - Subcommand: Run

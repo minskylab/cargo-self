@@ -1,17 +1,14 @@
 Resource: Library Imports
 - std
 
-Resource: Library Imports (src/cli/tool.rs)
-- clap
-
-Resource: Main Object (src/cli/mod.rs)
+Resource: Main Object
 - Cli struct
 
-Operation: Subcommand (src/cli/mod.rs)
+Operation: Subcommand
 - Parse the subcommand specified in command line input
 
-Resource: Commands Enum (src/cli/mod.rs)
+Resource: Commands Enum
 - Subcommand enum for Cli struct
 
-Operation: Run (src/cli/mod.rs)
+Operation: Run
 - Execute the "run" subcommand

@@ -1,2 +1,2 @@
-Resource: Main Object
+Resource: Constant
     - VERSION: "0.1.4"

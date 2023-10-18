@@ -1,22 +1,24 @@
 Resource: Library Imports
   - async_openai.types
 
-Resource: Operation: create_code_to_ro
-  - Set up CreateChatCompletionRequestArgs with default values
-  - Set max_tokens to 512
-  - Set model to "gpt-3.5-turbo"
-  - Set messages as an array of ChatCompletionRequestMessageArgs:
-    - Set role to Role::System
-    - Set content to DEFAULT_SYSTEM_PROMPT
-    - Set role to Role::User
-    - Set content to a formatted string that includes the source code parameter
+Resource: Other Resources
+  - Element
+  - prompts.DEFAULT_SYSTEM_PROMPT
 
-Resource: Operation: create_folder_to_ro
-  - Set up CreateChatCompletionRequestArgs with default values
-  - Set max_tokens to 512
-  - Set model to "gpt-3.5-turbo"
-  - Set messages as an array of ChatCompletionRequestMessageArgs:
-    - Set role to Role::System
-    - Set content to DEFAULT_SYSTEM_PROMPT
-    - Set role to Role::User
-    - Set content to a formatted string that includes the sources joined with newlines
+Operation: create_code_to_ro
+  - Create a chat completion request for generating code output
+  - Set the request parameters:
+    - Maximum tokens: 512
+    - Model: "gpt-3.5-turbo"
+    - Messages:
+      - Role: System, Content: DEFAULT_SYSTEM_PROMPT
+      - Role: User, Content: "give me only the output (in plain yaml format, don't use yaml code box syntax, only a parsable yaml result) of the code below: [source_code value]"
+
+Operation: create_folder_to_ro
+  - Create a chat completion request for generating code output based on a folder and its children
+  - Set the request parameters:
+    - Maximum tokens: 512
+    - Model: "gpt-3.5-turbo"
+    - Messages:
+      - Role: System, Content: DEFAULT_SYSTEM_PROMPT
+      - Role: User, Content: "give me only the output (in plain yaml format, don't use yaml code box syntax, only a parsable yaml result) of the code below: [sources joined by newlines]"
