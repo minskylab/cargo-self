@@ -1,11 +1,11 @@
 Resource: Library Imports
-    - clap
+  - clap
 
 Resource: Main Object
-    Cli
-
-    Operation: subcommand
-        - Specify subcommands under the main command
+- Cli
+  Operation: command
+    - Define the main subcommand for the CLI tool
 
 Resource: Commands Enum
-    - Run
+- Run
+  - Define the "run" subcommand

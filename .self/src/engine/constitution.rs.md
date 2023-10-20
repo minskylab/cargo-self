@@ -1,26 +1,29 @@
 Resource: Library Imports
-  - async_openai, serde, std, handlebars
+  - async_openai::types
+  - serde
+  - std::fs
+  - super::planner::Element
+  - handlebars::Handlebars
 
-Resource: ConstitutionDynamic Struct
-  - name: String
+Resource: ConstitutionDynamic struct
+  Resource: ConstitutionDynamic::new() function
+    - Create a new instance of ConstitutionDynamic struct
+  Resource: constitution_filepath() function
+    - Generate the file path for the constitution based on the element and name
+  Resource: system_input_data() function
+    - Retrieve system and input data for the constitution
+  Resource: calculate_for_element() function
+    - Calculate chat completion request for the given element and nodes
 
-Resource: ElementMinimized Struct
-  - is_file: bool
-  - path: String
-  - content: String
-  - children: Vec\<ElementMinimized\>
+Resource: ElementMinimized struct
 
-Resource: ConstitutionPayload Struct
-  - element: ElementMinimized
+Resource: ConstitutionPayload struct
 
-Operation: new (Constructor)
-  - Create a new instance of ConstitutionDynamic
-
+Operation: new
+  - Create a new instance of ConstitutionDynamic struct
 Operation: constitution_filepath
-  - Get the filepath of the constitution file for a given element
-
+  - Generate the file path for the constitution based on the element and name
 Operation: system_input_data
-  - Generate system and input data for the constitution template rendering process
-
+  - Retrieve system and input data for the constitution
 Operation: calculate_for_element
-  - Calculate the chat completion request for a given element and nodes
+  - Calculate chat completion request for the given element and nodes

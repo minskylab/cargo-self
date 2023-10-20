@@ -22,8 +22,6 @@ pub fn create_folder_to_ro(
         })
         .collect::<Vec<String>>();
 
-    // println!("sources: {:?}", sources);
-
     request
         .max_tokens(512u16)
         .model("gpt-3.5-turbo")

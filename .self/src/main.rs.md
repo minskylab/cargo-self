@@ -1,33 +1,85 @@
 Resource: Library Imports
-  - std.path.PathBuf
-  - async_openai.Client
-  - cargo_self.engine.constitution.ConstitutionDynamic
-  - cargo_self.engine.planner.{Action, Plan}
-  - dotenv.dotenv
+    - std, async_openai, cargo_self, dotenv, tokio
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
+
+Resource: N/A
 
 Resource: Main Object
-  - main function
-
-Operation: main
-  - Load environment variables from `.env` file
-  - Define `root` as a `PathBuf` pointing to `./Cargo.toml`
-  - Define `constitution_name` as a string "constitution.md"
-  - Create a new `Plan` with `root`
-  - Create a new `ConstitutionDynamic` with `constitution_name`
-  - Create a new `Client`
-  - Clone the nodes from the plan
-  - Iterate over each step in the plan
-    - If the step is `Action::CodeToRO`, do the following:
-      - Print "code to ro: {element:?}"
-      - Calculate the constitution rule for the element using `constitution_rule.calculate_for_element(element, &nodes)`
-      - Create a chat request with the calculated constitution rule
-      - Get the response from creating the chat request
-      - Get the new self content from the first choice in the response
-      - Write the new self content to the element
-    - If the step is `Action::FolderToRO`, do the following:
-      - Print "folder to ro: {element:?}"
-      - Calculate the constitution rule for the element using `constitution_rule.calculate_for_element(element, &nodes)`
-      - Create a chat request with the calculated constitution rule
-      - Get the response from creating the chat request
-      - Get the new self content from the first choice in the response
-      - Write the new self content to the element
+    Operation: main
+        - Load environment variables from .env file
+        - Set "root" variable to a relative path
+        - Set "constitution_name" variable to a string
+        - Create a new Plan object with "root" path
+        - Create a new ConstitutionDynamic object with "constitution_name"
+        - Create a new Client object
+        - Clone the nodes from plan into "nodes" variable
+        - Iterate over each step in plan
+            - If step is Action::CodeToRO
+                - Print the element
+                - Calculate request using constitution_rule and nodes
+                - Call the create function on client's chat object with the request and assign the result to "res"
+                - Get the content of the message from "res" and assign it to "new_self_content"
+                - Write "new_self_content" to the element's new_self_content
+            - If step is Action::FolderToRO
+                - Print the element
+                - Calculate request using constitution_rule and nodes
+                - Call the create function on client's chat object with the request and assign the result to "res"
+                - Get the content of the message from "res" and assign it to "new_self_content"
+                - Write "new_self_content" to the element's new_self_content

@@ -48,7 +48,7 @@ impl ConstitutionDynamic {
     fn system_input_data(&self, element: &Element, nodes: &Vec<Element>) -> (String, String) {
         let constitution_path = self.constitution_filepath(element.clone());
 
-        println!("constitution_path: {constitution_path:?}");
+        // println!("constitution_path: {constitution_path:?}");
 
         let reg = Handlebars::new();
 
@@ -104,16 +104,16 @@ impl ConstitutionDynamic {
         (system_part, input_part)
     }
 
-    pub fn calculate_for_element(
+    pub fn calculate(
         &self,
         element: &Element,
-        nodes: &Vec<Element>,
+        project_nodes: &Vec<Element>,
     ) -> CreateChatCompletionRequest {
         // if !element.is_file() {
 
         // }
 
-        let (system_prompt, input_prompt) = self.system_input_data(element, nodes);
+        let (system_prompt, input_prompt) = self.system_input_data(element, project_nodes);
 
         // let source_code = "".to_string();
 

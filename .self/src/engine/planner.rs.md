@@ -1,44 +1,41 @@
 Resource: Library Imports
-  - async_openai, cargo, ignore, serde, sha2, std
+  - async_openai
+  - cargo
+  - ignore
+  - serde
+  - sha2
+  - std
 
-Resource: Plan struct
+Resource: Plan Struct
   Operation: new
-    - Initialize a new Plan
+    - Create a new instance of the Plan struct
   Operation: nodes
-    - Get a reference to the nodes in the Plan
+    - Get a reference to the nodes vector
+  Operation: walk_elements
+    - Perform a walk over the elements and calculate the results
 
-Resource: Action enum
-  Variant: CodeToRO
-    - Convert code element to Resource and Operation
-  Variant: FolderToRO
-    - Convert folder element to Resource and Operation
+Resource: ComputationUnit Struct
+  Operation: new
+    - Create a new instance of the ComputationUnit struct
+  Operation: new_without_llm
+    - Create a new instance of the ComputationUnit struct without language model execution
 
-Resource: Element struct
+Resource: AnalyzeResult Struct
+
+Resource: Element Struct
   Operation: write_new_self_content
-    - Write new self content to the element
+    - Write new self content to the file
   Operation: relative_path
     - Get the relative path of the element
   Operation: find_children
-    - Find children elements of the element
+    - Find children elements of the current element
   Operation: find_parent
-    - Find parent element of the element
+    - Find the parent element of the current element
   Operation: is_file
     - Check if the element is a file
   Operation: content
     - Get the content of the element
 
-Resource: ActionResult struct
-  Field: llm_executed
-    - Flag indicating whether the llm (language model) was executed
-  Field: llm_input
-    - Input for the llm (language model)
-  Field: llm_result
-    - Result produced by the llm (language model)
-
-Resource: ComputationUnit struct
-  Field: action_executed
-    - Action executed in the computation unit
-  Field: result
-    - Result produced by the action execution
-
-Resource: AnalyzeResult struct
+Resource: Action Enum
+  - CodeToRO
+  - FolderToRO

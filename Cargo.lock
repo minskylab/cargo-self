@@ -459,6 +459,7 @@ dependencies = [
  "ignore",
  "polodb_core",
  "serde",
+ "serde_json",
  "sha2",
  "tokio",
  "walkdir",

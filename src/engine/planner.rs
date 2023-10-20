@@ -1,4 +1,8 @@
-use async_openai::types::{CreateChatCompletionRequest, CreateChatCompletionResponse};
+use async_openai::{
+    config::OpenAIConfig,
+    types::{CreateChatCompletionRequest, CreateChatCompletionResponse},
+    Client,
+};
 use cargo::{core::Shell, util::homedir};
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
@@ -13,11 +17,24 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub struct Plan {
+use super::constitution::ConstitutionDynamic;
+
+pub trait SelfStatePersistence {
+    fn save(&self, result: &AnalyzeResult);
+    fn load(&self) -> AnalyzeResult;
+}
+
+pub struct Plan<Persistence>
+where
+    Persistence: SelfStatePersistence,
+{
     // root: PathBuf,
     nodes: Vec<Element>,
     nodes_buffer: Vec<Element>,
     // constitution_name: String,
+
+    // TODO: executor
+    persistence: Persistence,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,25 +45,8 @@ pub enum Action {
     // ROToCode { element: Element },
     FolderToRO {
         element: Element,
-        children: Vec<Element>,
+        // children: Vec<Element>,
     },
-}
-
-impl Iterator for Plan {
-    type Item = Action;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.nodes_buffer.pop().map(|element| {
-            if element.is_file {
-                Action::CodeToRO { element }
-            } else {
-                Action::FolderToRO {
-                    element: element.clone(),
-                    children: element.find_children(&self.nodes),
-                }
-            }
-        })
-    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -72,23 +72,50 @@ pub struct ActionResult {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ComputationUnit {
-    pub action_executed: Action,
+    pub element: Element,
     pub result: Option<ActionResult>,
 }
 
+impl ComputationUnit {
+    pub fn new(
+        element: Element,
+        req: CreateChatCompletionRequest,
+        res: CreateChatCompletionResponse,
+        llm_executed: bool,
+    ) -> Self {
+        Self {
+            element,
+            result: Some(ActionResult {
+                llm_executed,
+                llm_input: Some(req),
+                llm_result: Some(res),
+            }),
+        }
+    }
+
+    pub fn new_without_llm(element: Element) -> Self {
+        Self {
+            element,
+            result: None,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AnalyzeResult {}
+pub struct AnalyzeResult {
+    pub computation_units: Vec<ComputationUnit>,
+}
 
 impl Debug for Element {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Element")
-            .field("path", &self.path)
+            // .field("path", &self.path)
             // .field("parent", &self.parent)
             // .field("modified", &self.modified)
             // // .field("is_file", &self.is_file)
             .field("self", &self.self_path)
+            .field("self_hash", &self.self_hash)
             .field("depth", &self.depth)
-            // .field("self_hash", &self.self_hash)
             .finish()
     }
 }
@@ -143,14 +170,37 @@ impl Element {
     }
 }
 
-impl Plan {
-    pub fn new(root: PathBuf) -> Self {
-        let elements = Plan::explore(root.clone(), true);
+impl<Persistence> Iterator for &mut Plan<Persistence>
+where
+    Persistence: SelfStatePersistence,
+{
+    type Item = Action;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.nodes_buffer.pop().map(|element| {
+            if element.is_file {
+                Action::CodeToRO { element }
+            } else {
+                Action::FolderToRO {
+                    element: element.clone(),
+                    // children: element.find_children(&self.nodes),
+                }
+            }
+        })
+    }
+}
+
+impl<Persistence> Plan<Persistence>
+where
+    Persistence: SelfStatePersistence,
+{
+    pub fn new(root: PathBuf, persistence: Persistence) -> Self {
+        let elements = Plan::<Persistence>::explore(root.clone(), true);
 
         Self {
             nodes: elements.clone(),
             nodes_buffer: elements,
-            // constitution_name,
+            persistence,
         }
     }
 
@@ -272,15 +322,6 @@ impl Plan {
         dirs.iter_mut().for_each(|element| {
             let element_path = element.path.clone();
 
-            // let mut file = File::open(element_path.clone()).unwrap();
-            // let mut sha256 = Sha256::new();
-
-            // io::copy(&mut file, &mut sha256).unwrap();
-
-            // let hash = sha256.finalize();
-
-            // println!("hash is: {:x}", hash);
-
             let self_root = Path::new("./.self");
 
 
@@ -321,11 +362,6 @@ impl Plan {
             } else {
                 let new_folder_name = self_root.to_path_buf().join(".self.md");
 
-
-
-
-                // std::fs::create_dir_all(new_folder_name.clone()).unwrap();
-
                 let mut self_content = None;
 
                 if !new_folder_name.exists() {
@@ -338,21 +374,9 @@ impl Plan {
                 (new_folder_name, self_content)
             };
 
-            
-
-
-            // let content = std::fs::read_to_string(element_path).unwrap_or("".to_string());
-
-            // element.content = Some(content.clone());
-
             element.self_path = Some(new_self_folder_path);
             element.self_content = self_content;
             // element.self_hash = Some(format!("{:x}", hash));
-
-            // parents_hm.insert(
-            //     element.parent.clone(),
-            //     parents_hm.get(&element.parent).unwrap() + 1,
-            // );
         });
 
         let mut final_elements_list: Vec<Element> = Vec::new();
@@ -369,13 +393,130 @@ impl Plan {
             }
         });
 
+        let mut freezed_elements_list = final_elements_list.clone();
+        let mut final_elements_list_clone = final_elements_list.clone();
+
         final_elements_list.reverse();
 
-        final_elements_list
+        for (i, element) in freezed_elements_list.iter_mut().enumerate() {
+            if element.is_file {
+                // println!("file: {element:?}");
+
+                continue;
+            }
+
+            // println!("directory: {element:?}");
+
+            let dir_children = element.find_children(&final_elements_list_clone);
+
+            // println!("{dir_children:?}");
+
+            let a = dir_children
+                .iter()
+                .map(|e| e.self_hash.clone().unwrap())
+                .collect::<Vec<String>>()
+                .join("-");
+
+            let hash = format!("{:x}", Sha256::digest(a.as_bytes()));
+
+            final_elements_list_clone[i].self_hash = Some(hash.clone());
+            element.self_hash = Some(hash);
+        }
+
+        freezed_elements_list.reverse();
+
+        freezed_elements_list
+        // final_elements_list
     }
 
-    pub fn analyze(&self) -> AnalyzeResult {
-        AnalyzeResult {}
+    pub async fn walk_elements(
+        &mut self,
+        dynamic: &ConstitutionDynamic,
+        client: &Client<OpenAIConfig>,
+    ) -> AnalyzeResult {
+        let nodes = self.nodes().clone();
+
+        let last_state = self.persistence.load();
+        let hashmap_last_state = last_state
+            .computation_units
+            .iter()
+            .map(|unit| (unit.element.path.clone(), unit))
+            .collect::<HashMap<PathBuf, &ComputationUnit>>();
+
+        let mut results = Vec::new();
+
+        for step in self {
+            match step {
+                Action::CodeToRO { element } => {
+                    println!("code to ro: {element:?}");
+
+                    let last_hash = hashmap_last_state
+                        .get(&element.path)
+                        .map(|unit| unit.element.self_hash.clone().unwrap_or("".to_string()))
+                        .unwrap_or("".to_string());
+
+                    if last_hash == element.self_hash.clone().unwrap() {
+                        println!("[SKIPPED]");
+                        results.push(ComputationUnit::new_without_llm(element));
+                        continue;
+                    }
+
+                    let request = dynamic.calculate(&element, &nodes);
+
+                    let response = client.chat().create(request.clone()).await.unwrap();
+
+                    let new_self_content = response
+                        .choices
+                        .first()
+                        .unwrap()
+                        .message
+                        .content
+                        .to_owned()
+                        .unwrap();
+
+                    element.write_new_self_content(new_self_content);
+
+                    results.push(ComputationUnit::new(element, request, response, true));
+                }
+                Action::FolderToRO { element } => {
+                    println!("folder to ro: {element:?}");
+                    // println!("neighbors: {:?}", children);
+
+                    let last_hash = hashmap_last_state
+                        .get(&element.path)
+                        .map(|unit| unit.element.self_hash.clone().unwrap_or("".to_string()))
+                        .unwrap_or("".to_string());
+
+                    if last_hash == element.self_hash.clone().unwrap() {
+                        println!("[SKIPPED]");
+                        results.push(ComputationUnit::new_without_llm(element));
+                        continue;
+                    }
+
+                    let request = dynamic.calculate(&element, &nodes);
+
+                    let response = client.chat().create(request.clone()).await.unwrap();
+
+                    let new_self_content = response
+                        .choices
+                        .first()
+                        .unwrap()
+                        .message
+                        .content
+                        .to_owned()
+                        .unwrap();
+
+                    element.write_new_self_content(new_self_content);
+
+                    // results.push(ComputationUnit::new_without_llm(element));
+                    results.push(ComputationUnit::new(element, request, response, true));
+                }
+            }
+        }
+
+        AnalyzeResult {
+            computation_units: results,
+        }
     }
 }
 

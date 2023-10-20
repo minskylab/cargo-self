@@ -1,31 +1,29 @@
 Resource: Library Imports
-    - std::path::PathBuf
-    - async_openai::Client
-    - cargo_self::engine::constitution::ConstitutionDynamic
-    - cargo_self::engine::planner::{Action, Plan}
-    - dotenv::dotenv
-    - tokio::main
+  - std.path.PathBuf
+  - async_openai::Client
+  - cargo_self.engine.constitution.ConstitutionDynamic
+  - cargo_self.engine.persistence.JsonMemoryPersistence
+  - cargo_self.engine.planner.Plan
+  - dotenv.dotenv
+  - tokio.main()
 
-Resource: Main Object
-    Operation: main
-        - Define the main function
-        - Load environment variables from .env file
-        - Set the root path to "./Cargo.toml"
-        - Set the constitution name to "constitution.md"
-        - Create a new plan with the root path
-        - Create a new constitution rule with the constitution name
-        - Create a new OpenAI client
-        - Retrieve the nodes from the plan
-        - Iterate over each step in the plan
-            - For CodeToRO action:
-                - Print the element
-                - Calculate the request for the element using the constitution rule and nodes
-                - Send a chat create request to the OpenAI client and store the response
-                - Get the new self content from the response
-                - Write the new self content to the element
-            - For FolderToRO action:
-                - Print the element
-                - Calculate the request for the element using the constitution rule and nodes
-                - Send a chat create request to the OpenAI client and store the response
-                - Get the new self content from the response
-                - Write the new self content to the element
+Resource: src/lib.rs
+  Resource: cli
+  Resource: engine
+
+Resource: src/cli
+
+Resource: src/engine
+
+Resource: src/main.rs
+  Operation: main()
+    - Load environment variables from .env file
+    - Set the root path as "./Cargo.toml" as a PathBuf
+    - Set the constitution_name as "constitution.md"
+    - Initialize a JsonMemoryPersistence with the path "./output.json"
+    - Initialize a new Plan with the root path and persistence
+    - Create a new ConstitutionDynamic with the constitution_name
+    - Create a new Client
+    - Walk the elements in the plan using the constitution_rule and client
+    - Create a new output_file as "output.json"
+    - Write the result to the output_file as a pretty JSON using serde_json
