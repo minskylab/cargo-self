@@ -1,14 +1,10 @@
 Resource: Library Imports
-  - clap
+- clap
+
 
 Resource: Main Object
-  - Cli struct
+- Cli
 
-Operation: Command Declaration
-  - name: "cargo-self"
-  - about: "Cargo extended with LLM"
-  - long_about: None
 
-Operation: Subcommand Declaration
-  - enum: Commands
-  - Subcommand: Run
+Operation: Run Command
+- Executes the "Run" command as a subcommand of the main "Cli" command.

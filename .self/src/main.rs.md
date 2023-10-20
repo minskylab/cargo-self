@@ -1,30 +1,50 @@
 Resource: Library Imports
-  - std.path.PathBuf
-  - async_openai.Client
-  - cargo_self.engine.model.create_code_to_ro
-  - cargo_self.engine.model.create_folder_to_ro
-  - cargo_self.engine.planner.Action
-  - cargo_self.engine.planner.Plan
-  - tokio.main
+  - std, async_openai, cargo_self, tokio
 
 Resource: Main Object
-  - main
+  - struct ElementRule
 
-Operation: main
-  - Get the root path from Cargo.toml file
-  - Create a new plan with the root path
-  - Create a new client
-  - Iterate through each step in the plan
-    - If the step is Action::CodeToRO:
-      - Print "code to ro: <element>"
-      - Create a request to convert code to ro using the element's content
-      - If the request is successful:
-        - Get the new_self_content from the response
-        - Write the new_self_content to the element
-    - If the step is Action::FolderToRO:
-      - Print "folder to ro: <element>"
-      - Print "neighbors: <children>"
-      - Create a request to convert folder to ro using the element and children
-      - If the request is successful:
-        - Get the new_self_content from the response
-        - Write the new_self_content to the element
+Resource: Operation in Main Object
+  - None
+
+Resource: Plan Object
+  - Operation: new
+    - Create a new Plan object
+  
+Resource: ConstitutionDynamic Object
+  - Operation: new
+    - Create a new ConstitutionDynamic object with constitution_name as a parameter
+  
+Resource: Client Object
+  - Operation: new
+    - Create a new Client object
+  
+Resource: PathBuf Object
+  - Operation: from
+    - Create a new PathBuf object with "./Cargo.toml" as a parameter
+  
+Resource: async_main()
+  - Operation: async_main
+    - The main async function that serves as the entry point of the program
+  
+Resource: Code Execution
+  - Operation: for loop
+    - Iterate over the steps in the plan
+      - Operation: match
+        - Perform pattern matching on each step
+      - Operation: Action::CodeToRO
+        - If the step is of type Action::CodeToRO
+          - Operation: calcualte_for_element
+            - Calculate the constitution rule for the element and nodes
+          - Operation: client.chat().create()
+            - Create a chat message with the calculated request
+          - Operation: write_new_self_content()
+            - Write the new self content obtained from the response to the element
+      - Operation: Action::FolderToRO
+        - If the step is of type Action::FolderToRO
+          - Operation: calcualte_for_element
+            - Calculate the constitution rule for the element and nodes
+          - Operation: client.chat().create()
+            - Create a chat message with the calculated request
+          - Operation: write_new_self_content()
+            - Write the new self content obtained from the response to the element

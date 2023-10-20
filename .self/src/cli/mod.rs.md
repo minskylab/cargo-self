@@ -1,3 +1,5 @@
-Resource: Library Imports
+Resource: Main Object
+    - CLI Module
 
-- mod (module) named "tool"
+Resource: Module Imports
+    - tool Module

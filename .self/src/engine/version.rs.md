@@ -1,2 +1,3 @@
-Resource: Constant
-    - VERSION: "0.1.4"
+Resource: No identified resources.
+
+Operation: No identified operations.

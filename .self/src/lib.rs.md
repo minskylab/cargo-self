@@ -1,3 +1,12 @@
 Resource: Library Imports
-- mod: cli
-- mod: engine
+- none
+
+Resource: Input Filters
+- none
+
+Resource: Main Object
+- none
+
+Resource: Modules
+- cli
+- engine

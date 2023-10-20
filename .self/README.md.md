@@ -1,1 +1,3 @@
-I'm sorry, but I need the actual source code in order to generate the output. Could you please provide the source code so that I can assist you further?
+Resource: README.md
+
+Operation: N/A

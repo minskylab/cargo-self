@@ -1,13 +1,15 @@
-Resource: Library Imports
-    - cargo, ignore, polodb_core, sha2, tokio, async-openai, clap, serde, walkdir
-
 Resource: Dependencies
-    - async-openai
-    - cargo
-    - clap
-    - ignore
-    - polodb_core
-    - serde
-    - sha2
-    - tokio
-    - walkdir
+      - async-openai: 0.14.3
+      - cargo: 0.74.0
+      - clap:
+          - version: "4.4.6"
+          - features: ["derive"]
+      - handlebars: 4.4.0
+      - ignore: 0.4.20
+      - polodb_core: 4.4.0
+      - serde: 1.0.189
+      - sha2: 0.10.8
+      - tokio:
+          - version: "1.33.0"
+          - features: ["full"]
+      - walkdir: 2.4.0

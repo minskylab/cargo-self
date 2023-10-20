@@ -139,7 +139,7 @@ impl Element {
     }
 
     pub fn content(&self) -> String {
-        self.content.clone().unwrap()
+        self.content.clone().unwrap_or("".to_string())
     }
 }
 
@@ -282,42 +282,73 @@ impl Plan {
 
             let self_root = Path::new("./.self");
 
-            let p = element.parent.clone();
 
-            let Ok(p) = p.strip_prefix(root) else {
-                return;
+            let (new_self_folder_path, self_content) = if element.depth != 0 {
+                let p = element.parent.clone();
+
+                let Ok(p) = p.strip_prefix(root) else {
+                    return;
+                };
+
+                let new_self_path = self_root.join(p);
+
+                // println!("new_self_path: {:?}", new_self_path);
+
+                let mut new_folder_name = element_path.strip_prefix(root).unwrap().to_path_buf();
+
+                // println!("new_folder_name: {:?}", new_folder_name);
+
+                add_extension(&mut new_folder_name, "md");
+
+                let new_self_folder = self_root.join(new_folder_name);
+
+                // println!("new_self_folder: {:?}", new_self_folder);
+
+                std::fs::create_dir_all(new_self_path).unwrap();
+
+                let mut self_content = None;
+
+
+                if !new_self_folder.exists() {
+                    let placeholder_content = "This is a placeholder for a folder. It will be replaced by the result of the following command:\n\n```llm\nfolder to ro\n```";
+                    std::fs::write(new_self_folder.clone(), placeholder_content).unwrap();
+                } else {
+                    self_content = Some(std::fs::read_to_string(new_self_folder.clone()).unwrap());
+                }
+
+                (new_self_folder, self_content)
+            } else {
+                // let new_self_path = self_root.join(element_path.strip_prefix(root).unwrap());
+
+                let new_folder_name = element_path.strip_prefix(root).unwrap().to_path_buf().with_file_name(".self.md");
+
+                // add_extension(&mut new_folder_name, "md");
+
+
+                // println!("new dir: {:?}", new_self_path);
+
+                std::fs::create_dir_all(new_folder_name.clone()).unwrap();
+
+                let mut self_content = None;
+
+                if !new_folder_name.exists() {
+                    let placeholder_content = "This is a placeholder for a folder. It will be replaced by the result of the following command:\n\n```llm\nfolder to ro\n```";
+                    std::fs::write(new_folder_name.clone(), placeholder_content).unwrap();
+                } else {
+                    self_content = Some(std::fs::read_to_string(new_folder_name.clone()).unwrap());
+                }
+
+                (new_folder_name, self_content)
             };
 
-            let new_self_path = self_root.join(p);
+            
 
-            // println!("new_self_path: {:?}", new_self_path);
-
-            let mut new_folder_name = element_path.strip_prefix(root).unwrap().to_path_buf();
-
-            // println!("new_folder_name: {:?}", new_folder_name);
-
-            add_extension(&mut new_folder_name, "md");
-
-            let new_self_folder = self_root.join(new_folder_name);
-
-            // println!("new_self_folder: {:?}", new_self_folder);
-
-            std::fs::create_dir_all(new_self_path).unwrap();
-
-            let mut self_content = None;
-
-            if !new_self_folder.exists() {
-                let placeholder_content = "This is a placeholder for a folder. It will be replaced by the result of the following command:\n\n```llm\nfolder to ro\n```";
-                std::fs::write(new_self_folder.clone(), placeholder_content).unwrap();
-            } else {
-                self_content = Some(std::fs::read_to_string(new_self_folder.clone()).unwrap());
-            }
 
             // let content = std::fs::read_to_string(element_path).unwrap_or("".to_string());
 
             // element.content = Some(content.clone());
 
-            element.self_path = Some(new_self_folder);
+            element.self_path = Some(new_self_folder_path);
             element.self_content = self_content;
             // element.self_hash = Some(format!("{:x}", hash));
 

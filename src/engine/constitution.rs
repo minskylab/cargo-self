@@ -109,6 +109,10 @@ impl ConstitutionDynamic {
         element: &Element,
         nodes: &Vec<Element>,
     ) -> CreateChatCompletionRequest {
+        // if !element.is_file() {
+
+        // }
+
         let (system_prompt, input_prompt) = self.system_input_data(element, nodes);
 
         // let source_code = "".to_string();
