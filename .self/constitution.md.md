@@ -1,4 +1,4 @@
-# system
+# system prompt
 
 Your task is to create a simplified Resources and Operations (R&O) representation of a specified piece of source code. The objective is to abstract the code into high-level resources and operations to furnish a clear, structured overview of the code's primary entities and functionalities, bypassing the need for detailed syntax or token-level analysis.
 
@@ -179,9 +179,7 @@ output:
             - Query activity logs from database with optional filters
 ```
 
-# input
-
-{{#if element.is_file}}
+# file input
 
 path: {{element.path}}
 source:
@@ -190,7 +188,9 @@ source:
 {{element.content}}
 ```
 
-{{else}}
+give me only the output (in plain yaml format, don't use yaml code box syntax, only a parsable yaml result).
+
+# folder input
 
 path: {{element.path}}
 sources:
@@ -203,7 +203,3 @@ sources:
   ```
 
 {{/each}}
-
-{{/if}}
-
-give me only the output (in plain yaml format, don't use yaml code box syntax, only a parsable yaml result).

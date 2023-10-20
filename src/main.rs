@@ -2,28 +2,36 @@ use std::path::PathBuf;
 
 use async_openai::Client;
 use cargo_self::engine::{
-    model::{create_code_to_ro, create_folder_to_ro},
+    constitution::ConstitutionDynamic,
+    // model::{create_code_to_ro, create_folder_to_ro},
     planner::{Action, Plan},
 };
 
 #[tokio::main]
 async fn main() {
     let root = PathBuf::from("./Cargo.toml");
+    let constitution_name = "constitution.md".to_string();
 
     let plan = Plan::new(root);
+
+    let constitution_rule = ConstitutionDynamic::new(constitution_name);
 
     let client = Client::new();
 
     // struct ElementRule {}
 
+    let nodes = plan.nodes().clone();
+
     for step in plan {
         match step {
             Action::CodeToRO { element } => {
-                println!("code to ro: {:?}", element);
+                println!("code to ro: {element:?}");
 
-                let req = create_code_to_ro(element.clone().content.unwrap());
+                let request = constitution_rule.calculate_for_element(&element, &nodes);
 
-                if let Ok(res) = client.chat().create(req).await {
+                // let req = create_code_to_ro(element.clone().content.unwrap());
+
+                if let Ok(res) = client.chat().create(request).await {
                     let new_self_content = res
                         .choices
                         .first()
@@ -36,13 +44,16 @@ async fn main() {
                     element.write_new_self_content(new_self_content);
                 }
             }
-            Action::FolderToRO { element, children } => {
-                println!("folder to ro: {:?}", element);
-                println!("neighbors: {:?}", children);
+            Action::FolderToRO {
+                element,
+                children: _,
+            } => {
+                println!("folder to ro: {element:?}");
+                // println!("neighbors: {:?}", children);
 
-                let req = create_folder_to_ro(element.clone(), children);
+                let request = constitution_rule.calculate_for_element(&element, &nodes);
 
-                if let Ok(res) = client.chat().create(req).await {
+                if let Ok(res) = client.chat().create(request).await {
                     let new_self_content = res
                         .choices
                         .first()

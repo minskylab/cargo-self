@@ -17,6 +17,7 @@ pub struct Plan {
     // root: PathBuf,
     nodes: Vec<Element>,
     nodes_buffer: Vec<Element>,
+    // constitution_name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -55,7 +56,7 @@ pub struct Element {
     modified: u64,
     is_file: bool,
     depth: usize,
-    pub content: Option<String>,
+    content: Option<String>,
 
     self_path: Option<PathBuf>,
     pub self_content: Option<String>,
@@ -110,26 +111,6 @@ impl Element {
 
         self.path.strip_prefix(root).unwrap().to_path_buf()
     }
-    // pub fn is_dirty(&self) -> bool {
-    //     if !self.is_file {
-    //         return false;
-    //     }
-
-    //     let element_path = self.path.as_path();
-
-    //     let mut file = File::open(element_path).unwrap();
-    //     let mut sha256 = Sha256::new();
-
-    //     io::copy(&mut file, &mut sha256).unwrap();
-
-    //     let hash = sha256.finalize();
-
-    //     let self_hash = self.self_hash.clone().unwrap();
-    //     println!("old hash: {}", self_hash);
-    //     println!("new hash: {:x}", hash);
-
-    //     self_hash != format!("{:x}", hash)
-    // }
 
     pub fn find_children(&self, elements: &Vec<Element>) -> Vec<Element> {
         let mut children: Vec<Element> = Vec::new();
@@ -152,6 +133,14 @@ impl Element {
 
         None
     }
+
+    pub fn is_file(&self) -> bool {
+        self.is_file
+    }
+
+    pub fn content(&self) -> String {
+        self.content.clone().unwrap()
+    }
 }
 
 impl Plan {
@@ -161,7 +150,12 @@ impl Plan {
         Self {
             nodes: elements.clone(),
             nodes_buffer: elements,
+            // constitution_name,
         }
+    }
+
+    pub fn nodes(&self) -> &Vec<Element> {
+        &self.nodes
     }
 
     fn explore(root: PathBuf, with_default_shell: bool) -> Vec<Element> {
