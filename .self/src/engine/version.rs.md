@@ -1,3 +1,3 @@
-Resource: No identified resources.
+Resource: No Resources Identified
 
-Operation: No identified operations.
+Operation: No Operations Identified

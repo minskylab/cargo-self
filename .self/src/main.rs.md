@@ -1,50 +1,33 @@
 Resource: Library Imports
-  - std, async_openai, cargo_self, tokio
+  - std.path.PathBuf
+  - async_openai.Client
+  - cargo_self.engine.constitution.ConstitutionDynamic
+  - cargo_self.engine.planner.{Action, Plan}
+  - dotenv.dotenv
 
 Resource: Main Object
-  - struct ElementRule
+  - main function
 
-Resource: Operation in Main Object
-  - None
-
-Resource: Plan Object
-  - Operation: new
-    - Create a new Plan object
-  
-Resource: ConstitutionDynamic Object
-  - Operation: new
-    - Create a new ConstitutionDynamic object with constitution_name as a parameter
-  
-Resource: Client Object
-  - Operation: new
-    - Create a new Client object
-  
-Resource: PathBuf Object
-  - Operation: from
-    - Create a new PathBuf object with "./Cargo.toml" as a parameter
-  
-Resource: async_main()
-  - Operation: async_main
-    - The main async function that serves as the entry point of the program
-  
-Resource: Code Execution
-  - Operation: for loop
-    - Iterate over the steps in the plan
-      - Operation: match
-        - Perform pattern matching on each step
-      - Operation: Action::CodeToRO
-        - If the step is of type Action::CodeToRO
-          - Operation: calcualte_for_element
-            - Calculate the constitution rule for the element and nodes
-          - Operation: client.chat().create()
-            - Create a chat message with the calculated request
-          - Operation: write_new_self_content()
-            - Write the new self content obtained from the response to the element
-      - Operation: Action::FolderToRO
-        - If the step is of type Action::FolderToRO
-          - Operation: calcualte_for_element
-            - Calculate the constitution rule for the element and nodes
-          - Operation: client.chat().create()
-            - Create a chat message with the calculated request
-          - Operation: write_new_self_content()
-            - Write the new self content obtained from the response to the element
+Operation: main
+  - Load environment variables from `.env` file
+  - Define `root` as a `PathBuf` pointing to `./Cargo.toml`
+  - Define `constitution_name` as a string "constitution.md"
+  - Create a new `Plan` with `root`
+  - Create a new `ConstitutionDynamic` with `constitution_name`
+  - Create a new `Client`
+  - Clone the nodes from the plan
+  - Iterate over each step in the plan
+    - If the step is `Action::CodeToRO`, do the following:
+      - Print "code to ro: {element:?}"
+      - Calculate the constitution rule for the element using `constitution_rule.calculate_for_element(element, &nodes)`
+      - Create a chat request with the calculated constitution rule
+      - Get the response from creating the chat request
+      - Get the new self content from the first choice in the response
+      - Write the new self content to the element
+    - If the step is `Action::FolderToRO`, do the following:
+      - Print "folder to ro: {element:?}"
+      - Calculate the constitution rule for the element using `constitution_rule.calculate_for_element(element, &nodes)`
+      - Create a chat request with the calculated constitution rule
+      - Get the response from creating the chat request
+      - Get the new self content from the first choice in the response
+      - Write the new self content to the element

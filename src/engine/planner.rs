@@ -86,8 +86,8 @@ impl Debug for Element {
             // .field("parent", &self.parent)
             // .field("modified", &self.modified)
             // // .field("is_file", &self.is_file)
+            .field("self", &self.self_path)
             .field("depth", &self.depth)
-            // .field("self_path", &self.self_path)
             // .field("self_hash", &self.self_hash)
             .finish()
     }
@@ -180,6 +180,7 @@ impl Plan {
 
         let mut elements: Vec<Element> = WalkBuilder::new(root)
             .hidden(true)
+            .add_custom_ignore_filename(".selfignore")
             .build()
             .map(|entry| {
                 let entry = entry.unwrap();
@@ -318,16 +319,12 @@ impl Plan {
 
                 (new_self_folder, self_content)
             } else {
-                // let new_self_path = self_root.join(element_path.strip_prefix(root).unwrap());
-
-                let new_folder_name = element_path.strip_prefix(root).unwrap().to_path_buf().with_file_name(".self.md");
-
-                // add_extension(&mut new_folder_name, "md");
+                let new_folder_name = self_root.to_path_buf().join(".self.md");
 
 
-                // println!("new dir: {:?}", new_self_path);
 
-                std::fs::create_dir_all(new_folder_name.clone()).unwrap();
+
+                // std::fs::create_dir_all(new_folder_name.clone()).unwrap();
 
                 let mut self_content = None;
 

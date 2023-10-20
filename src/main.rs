@@ -7,8 +7,12 @@ use cargo_self::engine::{
     planner::{Action, Plan},
 };
 
+use dotenv::dotenv;
+
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     let root = PathBuf::from("./Cargo.toml");
     let constitution_name = "constitution.md".to_string();
 
@@ -17,8 +21,6 @@ async fn main() {
     let constitution_rule = ConstitutionDynamic::new(constitution_name);
 
     let client = Client::new();
-
-    // struct ElementRule {}
 
     let nodes = plan.nodes().clone();
 
@@ -31,18 +33,18 @@ async fn main() {
 
                 // let req = create_code_to_ro(element.clone().content.unwrap());
 
-                if let Ok(res) = client.chat().create(request).await {
-                    let new_self_content = res
-                        .choices
-                        .first()
-                        .unwrap()
-                        .message
-                        .content
-                        .to_owned()
-                        .unwrap();
+                let res = client.chat().create(request).await.unwrap();
 
-                    element.write_new_self_content(new_self_content);
-                }
+                let new_self_content = res
+                    .choices
+                    .first()
+                    .unwrap()
+                    .message
+                    .content
+                    .to_owned()
+                    .unwrap();
+
+                element.write_new_self_content(new_self_content);
             }
             Action::FolderToRO {
                 element,
@@ -53,18 +55,18 @@ async fn main() {
 
                 let request = constitution_rule.calculate_for_element(&element, &nodes);
 
-                if let Ok(res) = client.chat().create(request).await {
-                    let new_self_content = res
-                        .choices
-                        .first()
-                        .unwrap()
-                        .message
-                        .content
-                        .to_owned()
-                        .unwrap();
+                let res = client.chat().create(request).await.unwrap();
 
-                    element.write_new_self_content(new_self_content);
-                }
+                let new_self_content = res
+                    .choices
+                    .first()
+                    .unwrap()
+                    .message
+                    .content
+                    .to_owned()
+                    .unwrap();
+
+                element.write_new_self_content(new_self_content);
             }
         }
     }

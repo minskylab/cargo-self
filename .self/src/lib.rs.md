@@ -1,12 +1,14 @@
 Resource: Library Imports
-- none
+- None
 
 Resource: Input Filters
-- none
+- None
 
 Resource: Main Object
-- none
+- lib.rs
 
-Resource: Modules
-- cli
-- engine
+Operation: mod cli
+- Import the `cli` module
+
+Operation: mod engine
+- Import the `engine` module

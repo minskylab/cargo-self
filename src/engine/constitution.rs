@@ -121,7 +121,7 @@ impl ConstitutionDynamic {
 
         request
             .max_tokens(512u16)
-            .model("gpt-3.5-turbo")
+            .model("gpt-3.5-turbo-16k")
             .messages([
                 ChatCompletionRequestMessageArgs::default()
                     .role(Role::System)
