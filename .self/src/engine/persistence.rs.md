@@ -1,25 +1,15 @@
-use std::path::PathBuf;
+Resource: Library Imports
+- std.path.PathBuf
+- super.planner.{AnalyzeResult, SelfStatePersistence}
 
-use super::planner::{AnalyzeResult, SelfStatePersistence};
+Resource: JsonMemoryPersistence Struct
+- Field: path (type: std.path.PathBuf)
 
-pub struct JsonMemoryPersistence {
-    path: PathBuf,
-}
+Operation: new (constructor)
+- Initialize a new instance of JsonMemoryPersistence with a given path
 
-impl JsonMemoryPersistence {
-    pub fn new(path: PathBuf) -> Self {
-        Self { path }
-    }
-}
-
-impl SelfStatePersistence for JsonMemoryPersistence {
-    fn save(&self, result: &AnalyzeResult) {
-        let output_file = std::fs::File::create(self.path.clone()).unwrap();
-        serde_json::to_writer_pretty(output_file, &result).unwrap();
-    }
-
-    fn load(&self) -> AnalyzeResult {
-        let input_file = std::fs::File::open(self.path.clone()).unwrap();
-        serde_json::from_reader(input_file).unwrap()
-    }
-}
+Impl: SelfStatePersistence for JsonMemoryPersistence
+- Operation: save
+  - Save the AnalyzeResult to the file specified by the path
+- Operation: load
+  - Load the AnalyzeResult from the file specified by the path, returning an Option<AnalyzeResult>

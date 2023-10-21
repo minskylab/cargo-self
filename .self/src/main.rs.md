@@ -1,85 +1,23 @@
 Resource: Library Imports
-    - std, async_openai, cargo_self, dotenv, tokio
+  - std, async_openai, cargo_self, dotenv
 
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: N/A
-
-Resource: Main Object
-    Operation: main
-        - Load environment variables from .env file
-        - Set "root" variable to a relative path
-        - Set "constitution_name" variable to a string
-        - Create a new Plan object with "root" path
-        - Create a new ConstitutionDynamic object with "constitution_name"
-        - Create a new Client object
-        - Clone the nodes from plan into "nodes" variable
-        - Iterate over each step in plan
-            - If step is Action::CodeToRO
-                - Print the element
-                - Calculate request using constitution_rule and nodes
-                - Call the create function on client's chat object with the request and assign the result to "res"
-                - Get the content of the message from "res" and assign it to "new_self_content"
-                - Write "new_self_content" to the element's new_self_content
-            - If step is Action::FolderToRO
-                - Print the element
-                - Calculate request using constitution_rule and nodes
-                - Call the create function on client's chat object with the request and assign the result to "res"
-                - Get the content of the message from "res" and assign it to "new_self_content"
-                - Write "new_self_content" to the element's new_self_content
+Operation: main
+  - Execute the main function
+Operation: dotenv
+  - Load environment variables from the .env file
+Operation: PathBuf::from
+  - Create a PathBuf object from a given path string
+Operation: &quot;constitution.md&quot;.to_string()
+  - Convert the string "constitution.md" to a String object
+Operation: JsonMemoryPersistence::new
+  - Create a JsonMemoryPersistence object with a given output file path
+Operation: Plan::new
+  - Create a new Plan object with a specified root and persistence
+Operation: ConstitutionDynamic::new
+  - Create a new ConstitutionDynamic object with a specified constitution name
+Operation: Client::new
+  - Create a new Client object
+Operation: plan.walk_elements
+  - Walk through the elements of the plan using the constitution rule and client
+Operation: fs::write
+  - Write the consolidated content to a file named "output.yaml"

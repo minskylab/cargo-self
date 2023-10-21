@@ -18,8 +18,8 @@ impl SelfStatePersistence for JsonMemoryPersistence {
         serde_json::to_writer_pretty(output_file, &result).unwrap();
     }
 
-    fn load(&self) -> AnalyzeResult {
+    fn load(&self) -> Option<AnalyzeResult> {
         let input_file = std::fs::File::open(self.path.clone()).unwrap();
-        serde_json::from_reader(input_file).unwrap()
+        serde_json::from_reader(input_file).ok()
     }
 }

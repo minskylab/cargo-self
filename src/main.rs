@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use async_openai::Client;
 use cargo_self::engine::{
@@ -24,7 +24,16 @@ async fn main() {
 
     let result = plan.walk_elements(&constitution_rule, &client).await;
 
-    let output_file = std::fs::File::create("output.json").unwrap();
+    // for unit in result.computation_units.clone() {
+    //     println!("Unit: {unit:?}");
 
-    serde_json::to_writer_pretty(output_file, &result).unwrap();
+    //     let self_content = unit.element.self_content();
+    //     let content = self_content.get(0..10);
+
+    //     // println!("Content: {content:?}");
+    // }
+
+    let consolidated_content = result.consolidate();
+
+    fs::write("output.yaml", consolidated_content).unwrap();
 }

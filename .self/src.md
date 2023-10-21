@@ -1,29 +1,19 @@
 Resource: Library Imports
-  - std.path.PathBuf
-  - async_openai::Client
-  - cargo_self.engine.constitution.ConstitutionDynamic
-  - cargo_self.engine.persistence.JsonMemoryPersistence
-  - cargo_self.engine.planner.Plan
-  - dotenv.dotenv
-  - tokio.main()
+- std, async_openai, cargo_self, dotenv, tokio, fs, path
 
-Resource: src/lib.rs
-  Resource: cli
-  Resource: engine
+Resource: Module - `cli`
 
-Resource: src/cli
+Resource: Module - `engine`
 
-Resource: src/engine
-
-Resource: src/main.rs
-  Operation: main()
-    - Load environment variables from .env file
-    - Set the root path as "./Cargo.toml" as a PathBuf
-    - Set the constitution_name as "constitution.md"
-    - Initialize a JsonMemoryPersistence with the path "./output.json"
-    - Initialize a new Plan with the root path and persistence
-    - Create a new ConstitutionDynamic with the constitution_name
-    - Create a new Client
-    - Walk the elements in the plan using the constitution_rule and client
-    - Create a new output_file as "output.json"
-    - Write the result to the output_file as a pretty JSON using serde_json
+Resource: `main.rs` File
+- Operation: main
+  - Load environment variables from `.env` file
+  - Define `root` as a `PathBuf` object with the path to `Cargo.toml`
+  - Define `constitution_name` as a string with the value "constitution.md"
+  - Create a new `JsonMemoryPersistence` object with a `PathBuf` to "output.json"
+  - Create a new `Plan` object with `root` and `persistence`
+  - Create a new `ConstitutionDynamic` object with `constitution_name`
+  - Create a new `Client` object
+  - Walk through elements of the `plan` using the `constitution_rule` and `client`
+  - Consolidate the result
+  - Write the consolidated content to a file named "output.yaml"

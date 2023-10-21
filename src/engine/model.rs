@@ -17,7 +17,7 @@ pub fn create_folder_to_ro(
             format!(
                 "{}:\n{}",
                 child.relative_path().to_str().unwrap(),
-                child.self_content.clone().unwrap(),
+                child.self_content().clone(),
             )
         })
         .collect::<Vec<String>>();

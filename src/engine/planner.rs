@@ -21,7 +21,7 @@ use super::constitution::ConstitutionDynamic;
 
 pub trait SelfStatePersistence {
     fn save(&self, result: &AnalyzeResult);
-    fn load(&self) -> AnalyzeResult;
+    fn load(&self) -> Option<AnalyzeResult>;
 }
 
 pub struct Plan<Persistence>
@@ -59,18 +59,18 @@ pub struct Element {
     content: Option<String>,
 
     self_path: Option<PathBuf>,
-    pub self_content: Option<String>,
+    self_content: Option<String>,
     self_hash: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ActionResult {
     pub llm_executed: bool,
     pub llm_input: Option<CreateChatCompletionRequest>,
     pub llm_result: Option<CreateChatCompletionResponse>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ComputationUnit {
     pub element: Element,
     pub result: Option<ActionResult>,
@@ -114,7 +114,7 @@ impl Debug for Element {
             // .field("modified", &self.modified)
             // // .field("is_file", &self.is_file)
             .field("self", &self.self_path)
-            .field("self_hash", &self.self_hash)
+            // .field("self_hash", &self.self_hash)
             .field("depth", &self.depth)
             .finish()
     }
@@ -167,6 +167,14 @@ impl Element {
 
     pub fn content(&self) -> String {
         self.content.clone().unwrap_or("".to_string())
+    }
+
+    pub fn self_content(&self) -> String {
+        if let Some(path) = &self.self_path {
+            std::fs::read_to_string(path).unwrap_or("".to_string())
+        } else {
+            "".to_string()
+        }
     }
 }
 
@@ -437,28 +445,34 @@ where
         let nodes = self.nodes().clone();
 
         let last_state = self.persistence.load();
-        let hashmap_last_state = last_state
-            .computation_units
-            .iter()
-            .map(|unit| (unit.element.path.clone(), unit))
-            .collect::<HashMap<PathBuf, &ComputationUnit>>();
+
+        let hashmap_last_state = last_state.map(|s| {
+            let computation_units = s.computation_units;
+
+            computation_units
+                .into_iter()
+                .map(|unit| (unit.element.path.clone(), unit))
+                .collect::<HashMap<PathBuf, ComputationUnit>>()
+        });
 
         let mut results = Vec::new();
 
-        for step in self {
+        for step in self.into_iter() {
             match step {
                 Action::CodeToRO { element } => {
-                    println!("code to ro: {element:?}");
+                    print!("code to ro: {element:?} ");
 
-                    let last_hash = hashmap_last_state
-                        .get(&element.path)
-                        .map(|unit| unit.element.self_hash.clone().unwrap_or("".to_string()))
-                        .unwrap_or("".to_string());
+                    if let Some(hashmap) = hashmap_last_state.clone() {
+                        let last_hash = hashmap
+                            .get(&element.path)
+                            .map(|unit| unit.element.self_hash.clone().unwrap_or("".to_string()))
+                            .unwrap_or("".to_string());
 
-                    if last_hash == element.self_hash.clone().unwrap() {
-                        println!("[SKIPPED]");
-                        results.push(ComputationUnit::new_without_llm(element));
-                        continue;
+                        if last_hash == element.self_hash.clone().unwrap() {
+                            println!("[SKIPPED]");
+                            results.push(ComputationUnit::new_without_llm(element));
+                            continue;
+                        }
                     }
 
                     let request = dynamic.calculate(&element, &nodes);
@@ -476,21 +490,28 @@ where
 
                     element.write_new_self_content(new_self_content);
 
+                    println!("[COMPUTED]");
                     results.push(ComputationUnit::new(element, request, response, true));
                 }
                 Action::FolderToRO { element } => {
-                    println!("folder to ro: {element:?}");
-                    // println!("neighbors: {:?}", children);
+                    print!("folder to ro: {element:?} ");
 
-                    let last_hash = hashmap_last_state
-                        .get(&element.path)
-                        .map(|unit| unit.element.self_hash.clone().unwrap_or("".to_string()))
-                        .unwrap_or("".to_string());
+                    if element.depth == 0 {
+                        let children = element.find_children(&nodes);
+                        println!("neighbors: {:?}", children);
+                    }
 
-                    if last_hash == element.self_hash.clone().unwrap() {
-                        println!("[SKIPPED]");
-                        results.push(ComputationUnit::new_without_llm(element));
-                        continue;
+                    if let Some(hashmap_last_state) = hashmap_last_state.clone() {
+                        let last_hash = hashmap_last_state
+                            .get(&element.path)
+                            .map(|unit| unit.element.self_hash.clone().unwrap_or("".to_string()))
+                            .unwrap_or("".to_string());
+
+                        if last_hash == element.self_hash.clone().unwrap() {
+                            println!("[SKIPPED]");
+                            results.push(ComputationUnit::new_without_llm(element));
+                            continue;
+                        }
                     }
 
                     let request = dynamic.calculate(&element, &nodes);
@@ -509,14 +530,47 @@ where
                     element.write_new_self_content(new_self_content);
 
                     // results.push(ComputationUnit::new_without_llm(element));
+                    println!("[COMPUTED]");
                     results.push(ComputationUnit::new(element, request, response, true));
                 }
             }
         }
 
-        AnalyzeResult {
+        let result = AnalyzeResult {
             computation_units: results,
+        };
+
+        self.persistence.save(&result);
+
+        result
+    }
+}
+
+impl AnalyzeResult {
+    pub fn new() -> Self {
+        Self {
+            computation_units: Vec::new(),
         }
+    }
+
+    pub fn consolidate(&self) -> String {
+        let mut consolidated = String::new();
+
+        for unit in self.computation_units.clone() {
+            let element = unit.element;
+
+            let self_content = element.self_content() + "\n";
+
+            consolidated.push_str(&self_content);
+        }
+
+        consolidated
+    }
+}
+
+impl Default for AnalyzeResult {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

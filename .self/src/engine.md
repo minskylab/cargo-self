@@ -1,58 +1,79 @@
 Resource: Library Imports
-  - async_openai, ChatCompletionRequestMessageArgs, CreateChatCompletionRequest, CreateChatCompletionRequestArgs, Role, super, planner::Element, prompts::DEFAULT_SYSTEM_PROMPT, fs, serde, std, std::env, std::fmt, std::fs, std::io, std::path, std::collections, std::collections::{HashMap, HashSet}, async_openai::config::OpenAIConfig, async_openai::types::{CreateChatCompletionRequest, CreateChatCompletionResponse}, async_openai::Client, cargo::{core::Shell, util::homedir}, cargo::util::config::Config, cargo::core::Workspace, ignore::WalkBuilder, serde::{Deserialize, Serialize}, sha2::{Digest, Sha256}, handlebars::Handlebars
+  - std, async_openai, serde, sha2, ignore, serde_json, cargo, async_graphql, chrono, uuid, handlebars, std::fs, std::path, serde_yaml
 
-Resource: Module constitution
-  Resource: ConstitutionDynamic
-    - name: String
-  Resource: Element
-    - path: PathBuf
-    - parent: PathBuf
-    - modified: u64
-    - is_file: bool
-    - depth: usize
-    - content: Option<String>
-    - self_path: Option<PathBuf>
-    - self_content: Option<String>
-    - self_hash: Option<String>
+Resource: ConstitutionDynamic Struct
+  - name: String
 
-Resource: Module model
-  Resource: create_folder_to_ro
-    - _element: Element
-    - children: Vec<Element>
-  Resource: CreateChatCompletionRequest
-    - request: CreateChatCompletionRequestArgs
-    - sources: Vec<String>
-  Resource: ConstitutionPayload
-    - element: ElementMinimized
-  Resource: ElementMinimized
-    - is_file: bool
-    - path: String
-    - content: String
-    - children: Vec<ElementMinimized>
+Resource: ElementMinimized Struct
+  - is_file: bool
+  - path: String
+  - content: String
+  - children: Vec<ElementMinimized>
 
-Resource: Module prompts
-  Resource: DEFAULT_SYSTEM_PROMPT
-    - "Your task is..."
-  Resource: DEFAULT_SYSTEM_PROMPT
-    - "Your task is..."
+Resource: ConstitutionPayload Struct
+  - element: ElementMinimized
 
-Resource: Module version
-  Resource: VERSION
-    - "0.1.4"
+Resource: JsonMemoryPersistence Struct
+  - path: PathBuf
 
-Resource: Module persistence
-  Resource: JsonMemoryPersistence
-    - path: PathBuf
-  Resource: JsonMemoryPersistence
-    - path: PathBuf
+Resource: Action Enum
+  - CodeToRO
+    - element: Element
+  - FolderToRO
+    - element: Element
 
-Resource: Module planner
-  Resource: Plan
-    - nodes: Vec<Element>
-    - nodes_buffer: Vec<Element>
-    - persistence: Persistence
-  Resource: Action
-    - CodeToRO: {element: Element}
-    - FolderToRO: {element: Element}
-  Resource: ActionResult
-    - llm_executed: bool
+Resource: Element Struct
+  - path: PathBuf
+  - parent: PathBuf
+  - modified: u64
+  - is_file: bool
+  - depth: usize
+  - content: Option&lt;String&gt;
+  - self_path: Option&lt;PathBuf&gt;
+  - self_content: Option&lt;String&gt;
+  - self_hash: Option&lt;String&gt;
+
+Resource: ActionResult Struct
+  - llm_executed: bool
+  - llm_input: Option&lt;CreateChatCompletionRequest&gt;
+  - llm_result: Option&lt;CreateChatCompletionResponse&gt;
+
+Resource: ComputationUnit Struct
+  - element: Element
+  - result: Option&lt;ActionResult&gt;
+
+Resource: AnalyzeResult Struct
+  - computation_units: Vec&lt;ComputationUnit&gt;
+
+Operation: ConstitutionDynamic.new
+  - Create a new ConstitutionDynamic object with a given name
+
+Operation: ConstitutionDynamic.calculate
+  - Generate a CreateChatCompletionRequest for a specific element and project nodes
+
+Operation: Element.write_new_self_content
+  - Write a new content to the element's self file
+
+Operation: Element.relative_path
+  - Get the relative path of the element
+
+Operation: Element.find_children
+  - Find the children elements of the current element
+
+Operation: Element.find_parent
+  - Find the parent element of the current element
+
+Operation: Element.is_file
+  - Check if the element represents a file
+
+Operation: Element.content
+  - Get the content of the element
+
+Operation: Element.self_content
+  - Get the content of the element's self file
+
+Operation: Plan.new
+  - Create a new Plan object with a root path and persistence
+
+Operation: Plan.nodes
+  - Get the list of nodes
