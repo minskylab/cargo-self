@@ -1,6 +1,6 @@
 # Cargo Self
 
-This project is a modular and extensible computation framework designed to manage, process, and execute computational plans. Leveraging the power of OpenAI's GPT-3.5-turbo, it can generate chat completions based on structured input, following a set of specified rules defined in a constitution. The software is organized into well-defined modules each handling specific aspects of the system, like state management, JSON persistence, planning, and processing of computational units.
+This software is a modular and extensible computation framework designed to manage, process, and execute computational plans. It provides features such as computation planning, dynamic chat completion using OpenAI's GPT, JSON persistence for storing and retrieving computation state, and a CLI tool for interacting with the engine and executing plans. The software also supports constitution-based processing, allowing users to define constitutions to guide the computation process and retrieve system and input data. With a modular design and clear separation of concerns, this software offers flexibility and customization for various computational needs.
 
 ## Features
 

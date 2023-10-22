@@ -11,6 +11,7 @@ license = "MIT AND Apache-2.0"
 async-openai = "0.14.3"
 cargo = "0.74.0"
 clap = { version = "4.4.6", features = ["derive"] }
+colored = "2.0.4"
 dotenv = "0.15.0"
 handlebars = "4.4.0"
 ignore = "0.4.20"

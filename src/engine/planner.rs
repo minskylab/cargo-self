@@ -1,5 +1,6 @@
 use async_openai::{config::OpenAIConfig, Client};
 use cargo::{core::Shell, util::homedir};
+use colored::*;
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -335,7 +336,7 @@ where
                             .unwrap_or("".to_string());
 
                         if last_hash == element.self_hash.clone().unwrap() {
-                            println!("[SKIPPED]");
+                            println!("{}", "[SKIPPED]".yellow());
                             results.push(ComputationUnit::new_without_llm(element));
                             continue;
                         }
@@ -356,7 +357,7 @@ where
 
                     element.write_new_self_content(new_self_content);
 
-                    println!("[COMPUTED]");
+                    println!("{}", "[COMPUTED]".green());
                     results.push(ComputationUnit::new(element, request, response, true));
                 }
                 Action::FolderToRO { element } => {
@@ -374,7 +375,7 @@ where
                             .unwrap_or("".to_string());
 
                         if last_hash == element.self_hash.clone().unwrap() {
-                            println!("[SKIPPED]");
+                            println!("{}", "[SKIPPED]".yellow());
                             results.push(ComputationUnit::new_without_llm(element));
                             continue;
                         }
@@ -396,7 +397,7 @@ where
                     element.write_new_self_content(new_self_content);
 
                     // results.push(ComputationUnit::new_without_llm(element));
-                    println!("[COMPUTED]");
+                    println!("{}", "[COMPUTED]".green());
                     results.push(ComputationUnit::new(element, request, response, true));
                 }
             }

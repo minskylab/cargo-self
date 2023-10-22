@@ -1,17 +1,11 @@
-Resource: Library Imports
-  - std, async_openai, cargo_self, dotenv
+- Resource: Library Imports
+    - std, async_openai, cargo_self.engine, dotenv, tokio::main, fs, io, path::PathBuf, async_openai::Client, cargo_self.engine::constitution::ConstitutionDynamic, cargo_self.engine::json_persistence::JsonMemoryPersistence, cargo_self.engine::planner::Plan
 
-Resource: Main Object
-  - main function
+- Resource: cli Module
 
-Operation: main function
-  - Load environment variables from `.env` file
-  - Set root path to `./Cargo.toml`
-  - Set constitution name to `constitution.md`
-  - Create a new instance of `JsonMemoryPersistence` with output file path `output.json`
-  - Create a new instance of `Plan` with root path and persistence
-  - Create `ConstitutionDynamic` with constitution name
-  - Create a new instance of `Client`
-  - Process the plan using the constitution rule and client
-  - Consolidate the content in self state
-  - Write the consolidated content to `output.md` file
+- Resource: engine Module
+
+- Resource: Main Object
+
+    - Operation: main
+        - Execute the main function of the program

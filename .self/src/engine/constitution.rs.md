@@ -1,26 +1,29 @@
 Resource: Library Imports
-- async_openai, serde, std::fs, super, handlebars
+- async_openai
+- serde
+- std
+- super
+- handlebars
 
 Resource: ConstitutionDynamic Struct
-- Property: name (String)
+Operation: new
+- Create a new instance of ConstitutionDynamic struct
 
-Resource: ElementMinimized Struct
-- Property: is_file (bool)
-- Property: path (String)
-- Property: content (Option String)
-- Property: children (Vec<ElementMinimized>)
+Operation: constitution_filepath
+- Generate the file path associated with the ConstitutionDynamic struct
+
+Operation: system_input_data
+- Generate system and input data based on the ConstitutionDynamic struct and provided elements
+
+Resource: ElementControlled Struct
+- is_file: bool
+- path: String
+- content: Option<String>
+- children: Vec<ElementControlled>
 
 Resource: ConstitutionPayload Struct
-- Property: element (ElementMinimized)
+- element: ElementControlled
 
-Operation: ConstitutionDynamic.new
-- Description: Create a new instance of ConstitutionDynamic struct with a specified name.
-
-Operation: ConstitutionDynamic.constitution_filepath
-- Description: Get the filepath for the constitution based on the provided element.
-
-Operation: ConstitutionDynamic.system_input_data
-- Description: Get the system and input data for the constitution based on the provided element and nodes.
-
-Operation: ConstitutionDynamic.calculate (implements SelfDynamic trait)
-- Description: Calculate and return a CreateChatCompletionRequest with prompts based on the provided element and project nodes.
+Resource: SelfDynamic Trait
+Operation: calculate
+- Calculate the CreateChatCompletionRequest based on the ConstitutionDynamic struct, element, and project nodes

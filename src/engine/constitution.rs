@@ -17,16 +17,16 @@ pub struct ConstitutionDynamic {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ElementMinimized {
+struct ElementControlled {
     is_file: bool,
     path: String,
     content: Option<String>,
-    children: Vec<ElementMinimized>,
+    children: Vec<ElementControlled>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ConstitutionPayload {
-    element: ElementMinimized,
+    element: ElementControlled,
 }
 
 impl ConstitutionDynamic {
@@ -59,20 +59,20 @@ impl ConstitutionDynamic {
             .render_template(
                 constitution_template_source.as_str(),
                 &ConstitutionPayload {
-                    element: ElementMinimized {
+                    element: ElementControlled {
                         is_file: element.is_file,
                         path: element.relative_path().to_str().unwrap().to_string(),
                         content: element.content.clone(),
                         children: element
                             .find_children(nodes)
                             .iter()
-                            .map(|x| ElementMinimized {
+                            .map(|x| ElementControlled {
                                 is_file: x.is_file,
                                 path: x.relative_path().to_str().unwrap().to_string(),
                                 content: x.content.clone(),
                                 children: vec![],
                             })
-                            .collect::<Vec<ElementMinimized>>(),
+                            .collect::<Vec<ElementControlled>>(),
                     },
                 },
             )

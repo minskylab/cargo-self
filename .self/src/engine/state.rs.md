@@ -1,36 +1,37 @@
 Resource: Library Imports
-  - async_openai::types::{CreateChatCompletionRequest, CreateChatCompletionResponse}
-  - serde::{Deserialize, Serialize}
-  - std::fmt::Debug
-  - super::element::Element
+  - async_openai
+  - serde
+  - std
 
-Resource: ActionResult struct
+Resource: ActionResult Struct
   - llm_executed: bool
   - llm_input: Option<CreateChatCompletionRequest>
   - llm_result: Option<CreateChatCompletionResponse>
 
-Resource: ComputationUnit struct
+Resource: ComputationUnit Struct
   - element: Element
   - result: Option<ActionResult>
 
-Resource: Trait SelfStatePersistence
+Resource: SelfStatePersistence Trait
   - save(&self, result: &SelfState<Self>)
   - load(&self) -> Option<SelfState<Self>>
 
-Resource: Impl ComputationUnit
-  Operation: new
-    - Create a new ComputationUnit with provided inputs
-  Operation: new_without_llm
-    - Create a new ComputationUnit without llm data
-
-Resource: SelfState struct
+Resource: SelfState Struct
   - computation_units: Vec<ComputationUnit>
   - persistence: Persistence
 
-Resource: SelfState struct (Generic with Persistence)
-  Operation: consolidate
-    - Consolidate computation_unit elements into a single String
-  Operation: transmute
-    - Convert the current SelfState to another SelfState with a prompt
+Operation: ComputationUnit new
+  - Creates a new ComputationUnit object with specified parameters
 
-Note: The commented out code blocks have been excluded from the parsed representation.
+Operation: ComputationUnit new_without_llm
+  - Creates a new ComputationUnit object without llm_result
+
+Resource: SelfStatePersistence Trait
+  - save(&self, result: &SelfState<Self>)
+  - load(&self) -> Option<SelfState<Self>>
+
+Operation: SelfState consolidate
+  - Consolidates the computation units into a single string
+
+Operation: SelfState transmute
+  - Transmutes the SelfState object using OpenAI GPT-3.5 model

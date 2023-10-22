@@ -1,4 +1,11 @@
-use async_openai::types::{CreateChatCompletionRequest, CreateChatCompletionResponse};
+use async_openai::{
+    config::OpenAIConfig,
+    types::{
+        ChatCompletionRequestMessageArgs, CreateChatCompletionRequest,
+        CreateChatCompletionRequestArgs, CreateChatCompletionResponse, Role,
+    },
+    Client,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -21,7 +28,7 @@ pub struct ComputationUnit {
 
 pub trait SelfStatePersistence
 where
-    Self: Sized,
+    Self: Sized + Clone,
 {
     fn save(&self, result: &SelfState<Self>);
     fn load(&self) -> Option<SelfState<Self>>;
@@ -55,7 +62,7 @@ impl ComputationUnit {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SelfState<Persistence>
 where
-    Persistence: SelfStatePersistence,
+    Persistence: SelfStatePersistence + Clone,
 {
     pub computation_units: Vec<ComputationUnit>,
 
@@ -63,26 +70,10 @@ where
     pub persistence: Persistence,
 }
 
-// impl<Persistence> Default for SelfState<Persistence>
-// where
-//     Persistence: SelfStatePersistence<Persistence>,
-// {
-//     fn default() -> Self {
-//         Self::new()
-//     }
-// }
-
 impl<Persistence> SelfState<Persistence>
 where
-    Persistence: SelfStatePersistence,
+    Persistence: SelfStatePersistence + Clone,
 {
-    // pub fn new() -> Self {
-    //     Self {
-    //         computation_units: Vec::new(),
-    //         // persistence:,
-    //     }
-    // }
-
     pub fn consolidate(&self) -> String {
         let mut consolidated = String::new();
 
@@ -103,7 +94,53 @@ where
         consolidated
     }
 
-    pub fn transmute(&self, prompt: String) -> SelfState<Persistence> {
-        todo!()
+    pub async fn transmute(
+        &self,
+        client: &Client<OpenAIConfig>,
+        prompt: String,
+    ) -> SelfState<Persistence> {
+        let mut request = CreateChatCompletionRequestArgs::default();
+
+        let consolidated = self.consolidate();
+        let system_prompt = format!(
+            "Your a programmer and the following is the description of a piece of software you are writing:\n\n{}\n\n.
+            Based on the user input, return a list only bash commands, don't explain anything, get me only the predicted bash commands.", consolidated.as_str());
+
+        let request = request
+            .max_tokens(512u16)
+            .model("gpt-3.5-turbo-16k")
+            .messages([
+                ChatCompletionRequestMessageArgs::default()
+                    .role(Role::System)
+                    .content(system_prompt)
+                    .build()
+                    .unwrap(),
+                ChatCompletionRequestMessageArgs::default()
+                    .role(Role::User)
+                    .content(prompt)
+                    .build()
+                    .unwrap(),
+            ])
+            .build()
+            .unwrap();
+
+        let response = client.chat().create(request).await.unwrap();
+
+        let commands = response
+            .choices
+            .first()
+            .unwrap()
+            .message
+            .content
+            .to_owned()
+            .unwrap();
+
+        println!("commands: {commands}");
+
+        SelfState {
+            computation_units: self.computation_units.clone(),
+            persistence: self.persistence.clone(),
+        }
+        // todo!()
     }
 }
