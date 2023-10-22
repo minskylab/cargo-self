@@ -7,7 +7,7 @@ use async_openai::types::{
 use serde::{Deserialize, Serialize};
 use std::fs;
 
-use super::planner::Element;
+use super::{dynamic::SelfDynamic, element::Element};
 use handlebars::Handlebars;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -18,10 +18,9 @@ pub struct ConstitutionDynamic {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ElementMinimized {
-    // name: String,
     is_file: bool,
     path: String,
-    content: String,
+    content: Option<String>,
     children: Vec<ElementMinimized>,
 }
 
@@ -45,7 +44,7 @@ impl ConstitutionDynamic {
         self.name.clone()
     }
 
-    fn system_input_data(&self, element: &Element, nodes: &Vec<Element>) -> (String, String) {
+    fn system_input_data(&self, element: &Element, nodes: &[Element]) -> (String, String) {
         let constitution_path = self.constitution_filepath(element.clone());
 
         // println!("constitution_path: {constitution_path:?}");
@@ -61,16 +60,16 @@ impl ConstitutionDynamic {
                 constitution_template_source.as_str(),
                 &ConstitutionPayload {
                     element: ElementMinimized {
-                        is_file: element.is_file(),
+                        is_file: element.is_file,
                         path: element.relative_path().to_str().unwrap().to_string(),
-                        content: element.content(),
+                        content: element.content.clone(),
                         children: element
                             .find_children(nodes)
                             .iter()
                             .map(|x| ElementMinimized {
-                                is_file: x.is_file(),
+                                is_file: x.is_file,
                                 path: x.relative_path().to_str().unwrap().to_string(),
-                                content: x.content(),
+                                content: x.content.clone(),
                                 children: vec![],
                             })
                             .collect::<Vec<ElementMinimized>>(),
@@ -103,19 +102,15 @@ impl ConstitutionDynamic {
 
         (system_part, input_part)
     }
+}
 
-    pub fn calculate(
+impl SelfDynamic for ConstitutionDynamic {
+    fn calculate(
         &self,
         element: &Element,
-        project_nodes: &Vec<Element>,
+        project_nodes: &[Element],
     ) -> CreateChatCompletionRequest {
-        // if !element.is_file() {
-
-        // }
-
         let (system_prompt, input_prompt) = self.system_input_data(element, project_nodes);
-
-        // let source_code = "".to_string();
 
         let mut request = CreateChatCompletionRequestArgs::default();
 
@@ -137,8 +132,4 @@ impl ConstitutionDynamic {
             .build()
             .unwrap()
     }
-
-    // pub fn create_code_to_ro(source_code: String) -> CreateChatCompletionRequest {
-
-    // }
 }

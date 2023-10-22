@@ -5,3 +5,4 @@ target
 .vscode
 output.json
 output.yaml
+output.md

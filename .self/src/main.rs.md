@@ -1,23 +1,32 @@
 Resource: Library Imports
-  - std, async_openai, cargo_self, dotenv
+- std, async_openai, cargo_self, dotenv
 
-Operation: main
-  - Execute the main function
+Resource: Main Object
+- main function
+
 Operation: dotenv
-  - Load environment variables from the .env file
+- Load environment variables from .env file.
+
 Operation: PathBuf::from
-  - Create a PathBuf object from a given path string
-Operation: &quot;constitution.md&quot;.to_string()
-  - Convert the string "constitution.md" to a String object
+- Create a PathBuf object from a string.
+
 Operation: JsonMemoryPersistence::new
-  - Create a JsonMemoryPersistence object with a given output file path
+- Create a new instance of JsonMemoryPersistence with a file path.
+
 Operation: Plan::new
-  - Create a new Plan object with a specified root and persistence
+- Create a new instance of the Plan struct with a root path and persistence.
+
 Operation: ConstitutionDynamic::new
-  - Create a new ConstitutionDynamic object with a specified constitution name
+- Create a new instance of ConstitutionDynamic with a constitution name.
+
 Operation: Client::new
-  - Create a new Client object
-Operation: plan.walk_elements
-  - Walk through the elements of the plan using the constitution rule and client
+- Create a new instance of the Client struct.
+
+Operation: plan.process
+- Process the plan using the constitution rule and client.
+
+Operation: self_state.consolidate
+- Consolidate the state of the plan into a single content.
+
 Operation: fs::write
-  - Write the consolidated content to a file named "output.yaml"
+- Write the consolidated content to a file.

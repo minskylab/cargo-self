@@ -1,29 +1,26 @@
 Resource: Library Imports
-  - async_openai::types
-  - serde
-  - std::fs
-  - super::planner::Element
-  - handlebars::Handlebars
+- async_openai, serde, std::fs, super, handlebars
 
-Resource: ConstitutionDynamic struct
-  Resource: ConstitutionDynamic::new() function
-    - Create a new instance of ConstitutionDynamic struct
-  Resource: constitution_filepath() function
-    - Generate the file path for the constitution based on the element and name
-  Resource: system_input_data() function
-    - Retrieve system and input data for the constitution
-  Resource: calculate_for_element() function
-    - Calculate chat completion request for the given element and nodes
+Resource: ConstitutionDynamic Struct
+- Property: name (String)
 
-Resource: ElementMinimized struct
+Resource: ElementMinimized Struct
+- Property: is_file (bool)
+- Property: path (String)
+- Property: content (Option String)
+- Property: children (Vec<ElementMinimized>)
 
-Resource: ConstitutionPayload struct
+Resource: ConstitutionPayload Struct
+- Property: element (ElementMinimized)
 
-Operation: new
-  - Create a new instance of ConstitutionDynamic struct
-Operation: constitution_filepath
-  - Generate the file path for the constitution based on the element and name
-Operation: system_input_data
-  - Retrieve system and input data for the constitution
-Operation: calculate_for_element
-  - Calculate chat completion request for the given element and nodes
+Operation: ConstitutionDynamic.new
+- Description: Create a new instance of ConstitutionDynamic struct with a specified name.
+
+Operation: ConstitutionDynamic.constitution_filepath
+- Description: Get the filepath for the constitution based on the provided element.
+
+Operation: ConstitutionDynamic.system_input_data
+- Description: Get the system and input data for the constitution based on the provided element and nodes.
+
+Operation: ConstitutionDynamic.calculate (implements SelfDynamic trait)
+- Description: Calculate and return a CreateChatCompletionRequest with prompts based on the provided element and project nodes.

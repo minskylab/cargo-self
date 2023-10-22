@@ -1,8 +1,4 @@
-use async_openai::{
-    config::OpenAIConfig,
-    types::{CreateChatCompletionRequest, CreateChatCompletionResponse},
-    Client,
-};
+use async_openai::{config::OpenAIConfig, Client};
 use cargo::{core::Shell, util::homedir};
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
@@ -10,28 +6,27 @@ use sha2::{Digest, Sha256};
 
 use std::{
     collections::{HashMap, HashSet},
-    env::{self, current_dir},
+    env,
     fmt::Debug,
     fs::{canonicalize, metadata, File},
     io::{self, BufWriter},
     path::{Path, PathBuf},
 };
 
-use super::constitution::ConstitutionDynamic;
+use crate::engine::{dynamic::SelfDynamic, state::ComputationUnit};
 
-pub trait SelfStatePersistence {
-    fn save(&self, result: &AnalyzeResult);
-    fn load(&self) -> Option<AnalyzeResult>;
-}
+use super::{
+    constitution::ConstitutionDynamic,
+    element::Element,
+    state::{SelfState, SelfStatePersistence},
+};
 
 pub struct Plan<Persistence>
 where
-    Persistence: SelfStatePersistence,
+    Persistence: SelfStatePersistence + Clone + Deserialize<'static>,
 {
-    // root: PathBuf,
     nodes: Vec<Element>,
     nodes_buffer: Vec<Element>,
-    // constitution_name: String,
 
     // TODO: executor
     persistence: Persistence,
@@ -49,138 +44,9 @@ pub enum Action {
     },
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Element {
-    path: PathBuf,
-    parent: PathBuf,
-    modified: u64,
-    is_file: bool,
-    depth: usize,
-    content: Option<String>,
-
-    self_path: Option<PathBuf>,
-    self_content: Option<String>,
-    self_hash: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ActionResult {
-    pub llm_executed: bool,
-    pub llm_input: Option<CreateChatCompletionRequest>,
-    pub llm_result: Option<CreateChatCompletionResponse>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ComputationUnit {
-    pub element: Element,
-    pub result: Option<ActionResult>,
-}
-
-impl ComputationUnit {
-    pub fn new(
-        element: Element,
-        req: CreateChatCompletionRequest,
-        res: CreateChatCompletionResponse,
-        llm_executed: bool,
-    ) -> Self {
-        Self {
-            element,
-            result: Some(ActionResult {
-                llm_executed,
-                llm_input: Some(req),
-                llm_result: Some(res),
-            }),
-        }
-    }
-
-    pub fn new_without_llm(element: Element) -> Self {
-        Self {
-            element,
-            result: None,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AnalyzeResult {
-    pub computation_units: Vec<ComputationUnit>,
-}
-
-impl Debug for Element {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Element")
-            // .field("path", &self.path)
-            // .field("parent", &self.parent)
-            // .field("modified", &self.modified)
-            // // .field("is_file", &self.is_file)
-            .field("self", &self.self_path)
-            // .field("self_hash", &self.self_hash)
-            .field("depth", &self.depth)
-            .finish()
-    }
-}
-
-impl Element {
-    pub fn write_new_self_content(&self, new_self_content: String) -> bool {
-        let self_path = self.self_path.clone().unwrap();
-
-        // if !self.is_file {
-        //     // i.e. is a directory
-        //     add_extension(&mut self_path, "md");
-        // }
-
-        std::fs::write(self_path, new_self_content).unwrap();
-        true
-    }
-
-    pub fn relative_path(&self) -> PathBuf {
-        let root = current_dir().unwrap();
-
-        self.path.strip_prefix(root).unwrap().to_path_buf()
-    }
-
-    pub fn find_children(&self, elements: &Vec<Element>) -> Vec<Element> {
-        let mut children: Vec<Element> = Vec::new();
-
-        for element in elements {
-            if element.parent == self.path {
-                children.push(element.clone());
-            }
-        }
-
-        children
-    }
-
-    pub fn find_parent(&self, elements: &Vec<Element>) -> Option<Element> {
-        for element in elements {
-            if element.path == self.parent {
-                return Some(element.clone());
-            }
-        }
-
-        None
-    }
-
-    pub fn is_file(&self) -> bool {
-        self.is_file
-    }
-
-    pub fn content(&self) -> String {
-        self.content.clone().unwrap_or("".to_string())
-    }
-
-    pub fn self_content(&self) -> String {
-        if let Some(path) = &self.self_path {
-            std::fs::read_to_string(path).unwrap_or("".to_string())
-        } else {
-            "".to_string()
-        }
-    }
-}
-
 impl<Persistence> Iterator for &mut Plan<Persistence>
 where
-    Persistence: SelfStatePersistence,
+    Persistence: SelfStatePersistence + Clone + Deserialize<'static>,
 {
     type Item = Action;
 
@@ -200,7 +66,7 @@ where
 
 impl<Persistence> Plan<Persistence>
 where
-    Persistence: SelfStatePersistence,
+    Persistence: SelfStatePersistence + Clone + Deserialize<'static>,
 {
     pub fn new(root: PathBuf, persistence: Persistence) -> Self {
         let elements = Plan::<Persistence>::explore(root.clone(), true);
@@ -437,11 +303,11 @@ where
         // final_elements_list
     }
 
-    pub async fn walk_elements(
+    pub async fn process(
         &mut self,
         dynamic: &ConstitutionDynamic,
         client: &Client<OpenAIConfig>,
-    ) -> AnalyzeResult {
+    ) -> SelfState<Persistence> {
         let nodes = self.nodes().clone();
 
         let last_state = self.persistence.load();
@@ -496,10 +362,10 @@ where
                 Action::FolderToRO { element } => {
                     print!("folder to ro: {element:?} ");
 
-                    if element.depth == 0 {
-                        let children = element.find_children(&nodes);
-                        println!("neighbors: {:?}", children);
-                    }
+                    // if element.depth == 0 {
+                    //     let children = element.find_children(&nodes);
+                    //     println!("neighbors: {:?}", children);
+                    // }
 
                     if let Some(hashmap_last_state) = hashmap_last_state.clone() {
                         let last_hash = hashmap_last_state
@@ -536,41 +402,14 @@ where
             }
         }
 
-        let result = AnalyzeResult {
+        let result = SelfState {
             computation_units: results,
+            persistence: self.persistence.clone(),
         };
 
         self.persistence.save(&result);
 
         result
-    }
-}
-
-impl AnalyzeResult {
-    pub fn new() -> Self {
-        Self {
-            computation_units: Vec::new(),
-        }
-    }
-
-    pub fn consolidate(&self) -> String {
-        let mut consolidated = String::new();
-
-        for unit in self.computation_units.clone() {
-            let element = unit.element;
-
-            let self_content = element.self_content() + "\n";
-
-            consolidated.push_str(&self_content);
-        }
-
-        consolidated
-    }
-}
-
-impl Default for AnalyzeResult {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

@@ -1,79 +1,70 @@
 Resource: Library Imports
-  - std, async_openai, serde, sha2, ignore, serde_json, cargo, async_graphql, chrono, uuid, handlebars, std::fs, std::path, serde_yaml
+  - async_openai, cargo, serde, serde_json, serde_yaml, std, candid, serde_path_to_error, clap, async_trait, futures, percent_encoding, tokio, base64, snafu, snafu_derive, tokio_util, hyper, hyper_tls, hyperx, lazy_static, tracing, tracing_futures, prettytable, chrono, tokio_test, assert_matches, mockito, k8s_openapi
 
-Resource: ConstitutionDynamic Struct
-  - name: String
+Resource: Input Filters
+  - None
 
-Resource: ElementMinimized Struct
-  - is_file: bool
-  - path: String
-  - content: String
-  - children: Vec<ElementMinimized>
+Resource: Main Object
+  - ConstitutionDynamic
 
-Resource: ConstitutionPayload Struct
-  - element: ElementMinimized
+Operation: new
+  - Create a new instance of ConstitutionDynamic with the given name
 
-Resource: JsonMemoryPersistence Struct
-  - path: PathBuf
+Operation: constitution_filepath
+  - Calculate where the constitution file should be located for a given Element
 
-Resource: Action Enum
-  - CodeToRO
-    - element: Element
-  - FolderToRO
-    - element: Element
+Operation: system_input_data
+  - Extract the system and input prompts data from a given Element and a list of nodes
 
-Resource: Element Struct
-  - path: PathBuf
-  - parent: PathBuf
-  - modified: u64
-  - is_file: bool
-  - depth: usize
-  - content: Option&lt;String&gt;
-  - self_path: Option&lt;PathBuf&gt;
-  - self_content: Option&lt;String&gt;
-  - self_hash: Option&lt;String&gt;
+Operation: calculate
+  - Calculate the CreateChatCompletionRequest for a given Element and a list of nodes
 
-Resource: ActionResult Struct
-  - llm_executed: bool
-  - llm_input: Option&lt;CreateChatCompletionRequest&gt;
-  - llm_result: Option&lt;CreateChatCompletionResponse&gt;
+Resource: Element
+  - Structure: path, parent, modified, is_file, depth, content, self_path, self_content, self_hash
 
-Resource: ComputationUnit Struct
-  - element: Element
-  - result: Option&lt;ActionResult&gt;
+Operation: write_new_self_content
+  - Write new self content to the Element's self path
 
-Resource: AnalyzeResult Struct
-  - computation_units: Vec&lt;ComputationUnit&gt;
+Operation: relative_path
+  - Get the relative path of the Element
 
-Operation: ConstitutionDynamic.new
-  - Create a new ConstitutionDynamic object with a given name
+Operation: find_children
+  - Find the children Elements of the current Element
 
-Operation: ConstitutionDynamic.calculate
-  - Generate a CreateChatCompletionRequest for a specific element and project nodes
+Operation: find_parent
+  - Find the parent Element of the current Element
 
-Operation: Element.write_new_self_content
-  - Write a new content to the element's self file
+Operation: self_content
+  - Get the self content of the Element
 
-Operation: Element.relative_path
-  - Get the relative path of the element
+Resource: Plan
+  - Structure: nodes, nodes_buffer, persistence
 
-Operation: Element.find_children
-  - Find the children elements of the current element
+Operation: new
+  - Create a new instance of Plan with the given root path and persistence
 
-Operation: Element.find_parent
-  - Find the parent element of the current element
-
-Operation: Element.is_file
-  - Check if the element represents a file
-
-Operation: Element.content
-  - Get the content of the element
-
-Operation: Element.self_content
-  - Get the content of the element's self file
-
-Operation: Plan.new
-  - Create a new Plan object with a root path and persistence
-
-Operation: Plan.nodes
+Operation: nodes
   - Get the list of nodes
+
+Operation: explore
+  - Explore the file system structure starting from the given root path
+
+Operation: process
+  - Process the Plan by calculating the CreateChatCompletionRequest and CreateChatCompletionResponse for each Action
+
+Resource: JsonMemoryPersistence
+  - Structure: path
+
+Operation: new
+  - Create a new instance of JsonMemoryPersistence with the given path
+
+Resource: ActionResult
+  - Structure: llm_executed, llm_input, llm_result
+
+Resource: ComputationUnit
+  - Structure: element, result
+
+Operation: new
+  - Create a new instance of ComputationUnit with the provided Element, CreateChatCompletionRequest, CreateChatCompletionResponse, and llm_executed flag
+
+Operation: new_without_llm

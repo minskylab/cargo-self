@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use async_openai::Client;
 use cargo_self::engine::{
-    constitution::ConstitutionDynamic, persistence::JsonMemoryPersistence, planner::Plan,
+    constitution::ConstitutionDynamic, json_persistence::JsonMemoryPersistence, planner::Plan,
 };
 
 use dotenv::dotenv;
@@ -22,18 +22,9 @@ async fn main() {
 
     let client = Client::new();
 
-    let result = plan.walk_elements(&constitution_rule, &client).await;
+    let self_state = plan.process(&constitution_rule, &client).await;
 
-    // for unit in result.computation_units.clone() {
-    //     println!("Unit: {unit:?}");
+    let consolidated_content = self_state.consolidate();
 
-    //     let self_content = unit.element.self_content();
-    //     let content = self_content.get(0..10);
-
-    //     // println!("Content: {content:?}");
-    // }
-
-    let consolidated_content = result.consolidate();
-
-    fs::write("output.yaml", consolidated_content).unwrap();
+    fs::write("output.md", consolidated_content).unwrap();
 }

@@ -3,7 +3,7 @@ use async_openai::types::{
     Role,
 };
 
-use super::{planner::Element, prompts::DEFAULT_SYSTEM_PROMPT};
+use super::{element::Element, prompts::DEFAULT_SYSTEM_PROMPT};
 
 pub fn create_folder_to_ro(
     _element: Element,
