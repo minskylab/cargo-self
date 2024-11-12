@@ -1,6 +1,6 @@
 use async_openai::{config::OpenAIConfig, Client};
 use cargo::{core::Shell, util::homedir};
-use colored::*;
+use colored::Colorize;
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
